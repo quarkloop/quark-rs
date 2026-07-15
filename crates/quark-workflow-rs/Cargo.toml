@@ -4,6 +4,7 @@ description = "Type-safe Rust client SDK for the workflow service (builder patte
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license.workspace = true
 
 [dependencies]
 quark-workflow-proto = { path = "../quark-workflow-proto" }

@@ -2,7 +2,7 @@
 
 Unified Rust client SDK for the Quarkloop platform.
 
-**This is a closed-source repository. No license is granted.**
+**Licensed under the MIT License.**
 
 ## What's in this repo
 

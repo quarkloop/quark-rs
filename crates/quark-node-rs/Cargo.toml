@@ -3,6 +3,7 @@ name = "quark-node-rs"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license.workspace = true
 description = "Ergonomic gRPC client SDK for the node service (builder pattern)"
 
 [lib]

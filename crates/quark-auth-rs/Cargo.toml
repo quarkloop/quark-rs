@@ -3,6 +3,7 @@ name = "quark-auth-rs"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license.workspace = true
 description = "Ergonomic gRPC client SDK for the auth service (builder pattern)"
 
 [lib]

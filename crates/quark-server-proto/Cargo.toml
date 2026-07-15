@@ -3,6 +3,7 @@ name = "quark-server-proto"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license.workspace = true
 description = "Generated tonic/prost gRPC types for quark-server-proto"
 
 [dependencies]

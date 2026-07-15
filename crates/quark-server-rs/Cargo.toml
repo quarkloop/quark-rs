@@ -3,6 +3,7 @@ name = "quark-server-rs"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
+license.workspace = true
 description = "Ergonomic gRPC client SDK for the server service (builder pattern)"
 
 [lib]
