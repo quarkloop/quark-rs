@@ -72,9 +72,8 @@ pub use quark_auth_proto::common::v1 as common;
 
 pub use services::{
     admin::AdminService, auth::AuthService, identity::IdentityService, mfa::MfaService,
-    oauth_server::OAuthServerService, organization::OrganizationService, passkey::PasskeyService,
-    policy::PolicyService, project::ProjectService, role::RoleService, sso::SsoService,
-    user::UserService, workspace::WorkspaceService,
+    oauth_server::OAuthServerService, passkey::PasskeyService, policy::PolicyService,
+    role::RoleService, sso::SsoService, user::UserService,
 };
 
 /// Snapshot of the configuration used to build an [`AuthClient`].
@@ -203,21 +202,6 @@ impl AuthClient {
     /// AdminService — admin-only operations (user/factor/passkey/SSO/OAuth-client management, audit logs).
     pub fn admin(&self) -> AdminService {
         AdminService::new(self.channel.clone())
-    }
-
-    /// OrganizationService — organizations CRUD + lifecycle.
-    pub fn organizations(&self) -> OrganizationService {
-        OrganizationService::new(self.channel.clone())
-    }
-
-    /// ProjectService — projects CRUD + lifecycle (org-scoped).
-    pub fn projects(&self) -> ProjectService {
-        ProjectService::new(self.channel.clone())
-    }
-
-    /// WorkspaceService — workspaces CRUD + lifecycle (project-scoped).
-    pub fn workspaces(&self) -> WorkspaceService {
-        WorkspaceService::new(self.channel.clone())
     }
 
     /// RoleService — roles CRUD + permission grants (org-scoped).

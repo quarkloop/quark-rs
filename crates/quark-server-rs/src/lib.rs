@@ -81,7 +81,10 @@ use tonic::transport::{Channel, Endpoint};
 pub use quark_server_proto::common::v1 as common;
 pub use quark_server_proto::server::v1 as proto;
 
+pub use services::organization::OrganizationService;
+pub use services::project::ProjectService;
 pub use services::server::ServerService;
+pub use services::workspace::WorkspaceService;
 
 /// Snapshot of the configuration used to build a [`ServerClient`].
 ///
@@ -178,6 +181,33 @@ impl ServerClient {
     /// `GetSystemHealth`.
     pub fn server(&self) -> ServerService {
         ServerService::new(self.channel.clone())
+    }
+
+    /// OrganizationService — organizations CRUD + lifecycle.
+    ///
+    /// Covers all 8 RPCs: `CreateOrganization`, `GetOrganization`,
+    /// `ListOrganizations`, `UpdateOrganization`, `ActivateOrganization`,
+    /// `DeactivateOrganization`, `ArchiveOrganization`, `DeleteOrganization`.
+    pub fn organizations(&self) -> OrganizationService {
+        OrganizationService::new(self.channel.clone())
+    }
+
+    /// ProjectService — projects CRUD + lifecycle (org-scoped).
+    ///
+    /// Covers all 8 RPCs: `CreateProject`, `GetProject`, `ListProjects`,
+    /// `UpdateProject`, `ActivateProject`, `DeactivateProject`,
+    /// `ArchiveProject`, `DeleteProject`.
+    pub fn projects(&self) -> ProjectService {
+        ProjectService::new(self.channel.clone())
+    }
+
+    /// WorkspaceService — workspaces CRUD + lifecycle (project-scoped).
+    ///
+    /// Covers all 8 RPCs: `CreateWorkspace`, `GetWorkspace`, `ListWorkspaces`,
+    /// `UpdateWorkspace`, `ActivateWorkspace`, `DeactivateWorkspace`,
+    /// `ArchiveWorkspace`, `DeleteWorkspace`.
+    pub fn workspaces(&self) -> WorkspaceService {
+        WorkspaceService::new(self.channel.clone())
     }
 }
 

@@ -1,15 +1,19 @@
 //! WorkspaceService — workspaces CRUD + lifecycle (project-scoped).
 //!
-//! Wraps `quark_auth_proto::auth::v1::workspace_service_client::WorkspaceServiceClient`.
+//! Wraps `quark_server_proto::server::v1::workspace_service_client::WorkspaceServiceClient`.
 //!
 //! Covers all 8 RPCs: `CreateWorkspace`, `GetWorkspace`, `ListWorkspaces`,
 //! `UpdateWorkspace`, `ActivateWorkspace`, `DeactivateWorkspace`,
 //! `ArchiveWorkspace`, `DeleteWorkspace`. Every RPC requires a bearer token.
+//!
+//! Note: workspaces used to be served by auth-service; as of the
+//! org/project/workspace migration they are served by the server itself.
+//! This client speaks to the server's `WorkspaceService`.
 
-use quark_auth_proto::auth::v1::workspace_service_client::WorkspaceServiceClient;
+use quark_server_proto::server::v1::workspace_service_client::WorkspaceServiceClient;
 use tonic::transport::Channel;
 
-use crate::error::AuthClientError;
+use crate::error::ServerClientError;
 use crate::services::attach_bearer;
 
 /// Client for `WorkspaceService`.
@@ -36,8 +40,8 @@ impl WorkspaceService {
         project_id: &str,
         name: &str,
         description: Option<&str>,
-    ) -> Result<quark_auth_proto::auth::v1::Workspace, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::CreateWorkspaceRequest {
+    ) -> Result<quark_server_proto::server::v1::Workspace, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::CreateWorkspaceRequest {
             project_id: project_id.to_string(),
             name: name.to_string(),
             description: description.map(|s| s.to_string()),
@@ -52,8 +56,8 @@ impl WorkspaceService {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::Workspace, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::GetWorkspaceRequest {
+    ) -> Result<quark_server_proto::server::v1::Workspace, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::GetWorkspaceRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -68,9 +72,9 @@ impl WorkspaceService {
         limit: u32,
         offset: u32,
         project_id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::ListWorkspacesResponse, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::ListWorkspacesRequest {
-            query: Some(quark_auth_proto::common::v1::PageQuery { limit, offset }),
+    ) -> Result<quark_server_proto::server::v1::ListWorkspacesResponse, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ListWorkspacesRequest {
+            query: Some(quark_server_proto::common::v1::PageQuery { limit, offset }),
             project_id: project_id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -85,8 +89,8 @@ impl WorkspaceService {
         id: &str,
         name: Option<&str>,
         description: Option<&str>,
-    ) -> Result<quark_auth_proto::auth::v1::Workspace, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::UpdateWorkspaceRequest {
+    ) -> Result<quark_server_proto::server::v1::Workspace, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::UpdateWorkspaceRequest {
             id: id.to_string(),
             name: name.map(|s| s.to_string()),
             description: description.map(|s| s.to_string()),
@@ -101,8 +105,8 @@ impl WorkspaceService {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::Workspace, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::ActivateWorkspaceRequest {
+    ) -> Result<quark_server_proto::server::v1::Workspace, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ActivateWorkspaceRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -115,8 +119,8 @@ impl WorkspaceService {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::Workspace, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::DeactivateWorkspaceRequest {
+    ) -> Result<quark_server_proto::server::v1::Workspace, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::DeactivateWorkspaceRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -129,8 +133,8 @@ impl WorkspaceService {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::Workspace, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::ArchiveWorkspaceRequest {
+    ) -> Result<quark_server_proto::server::v1::Workspace, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ArchiveWorkspaceRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -139,8 +143,8 @@ impl WorkspaceService {
     }
 
     /// `DeleteWorkspace` — delete a workspace by ID.
-    pub async fn delete(&mut self, token: &str, id: &str) -> Result<(), AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::DeleteWorkspaceRequest {
+    pub async fn delete(&mut self, token: &str, id: &str) -> Result<(), ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::DeleteWorkspaceRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);

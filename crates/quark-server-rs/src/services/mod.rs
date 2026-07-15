@@ -12,7 +12,10 @@
 //! 5. Return the proto response (or `()` for `google.protobuf.Empty` returns),
 //!    mapping `tonic::Status` → [`crate::ServerClientError`].
 
+pub mod organization;
+pub mod project;
 pub mod server;
+pub mod workspace;
 
 use tonic::metadata::MetadataValue;
 use tonic::Request;

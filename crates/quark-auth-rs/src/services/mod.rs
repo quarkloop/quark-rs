@@ -17,14 +17,11 @@ pub mod auth;
 pub mod identity;
 pub mod mfa;
 pub mod oauth_server;
-pub mod organization;
 pub mod passkey;
 pub mod policy;
-pub mod project;
 pub mod role;
 pub mod sso;
 pub mod user;
-pub mod workspace;
 
 use tonic::metadata::MetadataValue;
 use tonic::Request;

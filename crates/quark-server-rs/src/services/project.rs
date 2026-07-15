@@ -1,15 +1,19 @@
 //! ProjectService — projects CRUD + lifecycle (org-scoped).
 //!
-//! Wraps `quark_auth_proto::auth::v1::project_service_client::ProjectServiceClient`.
+//! Wraps `quark_server_proto::server::v1::project_service_client::ProjectServiceClient`.
 //!
 //! Covers all 8 RPCs: `CreateProject`, `GetProject`, `ListProjects`,
 //! `UpdateProject`, `ActivateProject`, `DeactivateProject`, `ArchiveProject`,
 //! `DeleteProject`. Every RPC requires a bearer token.
+//!
+//! Note: projects used to be served by auth-service; as of the
+//! org/project/workspace migration they are served by the server itself.
+//! This client speaks to the server's `ProjectService`.
 
-use quark_auth_proto::auth::v1::project_service_client::ProjectServiceClient;
+use quark_server_proto::server::v1::project_service_client::ProjectServiceClient;
 use tonic::transport::Channel;
 
-use crate::error::AuthClientError;
+use crate::error::ServerClientError;
 use crate::services::attach_bearer;
 
 /// Client for `ProjectService`.
@@ -37,8 +41,8 @@ impl ProjectService {
         name: &str,
         slug: &str,
         description: Option<&str>,
-    ) -> Result<quark_auth_proto::auth::v1::Project, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::CreateProjectRequest {
+    ) -> Result<quark_server_proto::server::v1::Project, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::CreateProjectRequest {
             organization_id: organization_id.to_string(),
             name: name.to_string(),
             slug: slug.to_string(),
@@ -54,8 +58,8 @@ impl ProjectService {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::Project, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::GetProjectRequest {
+    ) -> Result<quark_server_proto::server::v1::Project, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::GetProjectRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -70,9 +74,9 @@ impl ProjectService {
         limit: u32,
         offset: u32,
         organization_id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::ListProjectsResponse, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::ListProjectsRequest {
-            query: Some(quark_auth_proto::common::v1::PageQuery { limit, offset }),
+    ) -> Result<quark_server_proto::server::v1::ListProjectsResponse, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ListProjectsRequest {
+            query: Some(quark_server_proto::common::v1::PageQuery { limit, offset }),
             organization_id: organization_id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -87,8 +91,8 @@ impl ProjectService {
         id: &str,
         name: Option<&str>,
         description: Option<&str>,
-    ) -> Result<quark_auth_proto::auth::v1::Project, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::UpdateProjectRequest {
+    ) -> Result<quark_server_proto::server::v1::Project, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::UpdateProjectRequest {
             id: id.to_string(),
             name: name.map(|s| s.to_string()),
             description: description.map(|s| s.to_string()),
@@ -103,8 +107,8 @@ impl ProjectService {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::Project, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::ActivateProjectRequest {
+    ) -> Result<quark_server_proto::server::v1::Project, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ActivateProjectRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -117,8 +121,8 @@ impl ProjectService {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::Project, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::DeactivateProjectRequest {
+    ) -> Result<quark_server_proto::server::v1::Project, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::DeactivateProjectRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -131,8 +135,8 @@ impl ProjectService {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_auth_proto::auth::v1::Project, AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::ArchiveProjectRequest {
+    ) -> Result<quark_server_proto::server::v1::Project, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ArchiveProjectRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -141,8 +145,8 @@ impl ProjectService {
     }
 
     /// `DeleteProject` — delete a project by ID.
-    pub async fn delete(&mut self, token: &str, id: &str) -> Result<(), AuthClientError> {
-        let mut req = tonic::Request::new(quark_auth_proto::auth::v1::DeleteProjectRequest {
+    pub async fn delete(&mut self, token: &str, id: &str) -> Result<(), ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::DeleteProjectRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
