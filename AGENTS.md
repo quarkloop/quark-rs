@@ -116,3 +116,19 @@ When asked to audit:
 - Do not add `#[ignore]` to a passing test.
 - Do not add `// TODO` instead of implementing — the code is the implementation.
 - Do not simplify the builder — all 9 transport knobs must be present.
+
+## 10. Commit Message Format
+
+All commit messages must follow this format:
+
+```
+{type}: {message}
+```
+
+- All lowercase.
+- `{type}` is one of: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `build`, `ci`.
+- `{message}` is a concise, imperative-mood description.
+- No period at the end.
+- Example: `feat: add unified quark-rs facade crate`
+- Example: `fix: rename proto-gen crates to avoid lockfile collisions`
+- Example: `docs: add agents.md with commit message format`
