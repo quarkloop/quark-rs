@@ -4,7 +4,7 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Unified Rust client SDK for the Quarkloop platform (factory + builder pattern)"
+description = "Unified Rust client SDK for the Quark platform (factory + builder pattern)"
 
 [lib]
 name = "quark_rs"

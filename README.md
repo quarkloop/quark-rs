@@ -1,6 +1,6 @@
 # Quark Rust SDK
 
-Unified Rust client SDK for the Quarkloop platform.
+Unified Rust client SDK for the Quark platform.
 
 **Licensed under the MIT License.**
 

@@ -1,7 +1,7 @@
-# quark-rs — Unified Rust client SDK for the Quarkloop platform.
+# quark-rs — Unified Rust client SDK for the Quark platform.
 #
 # This workspace contains the proto definitions and ergonomic builder-pattern
-# gRPC client SDKs for all Quarkloop platform services: auth, server, node,
+# gRPC client SDKs for all Quark platform services: auth, server, node,
 # and workflow.
 #
 # This is a closed-source repository. No license is granted.
@@ -33,7 +33,7 @@ members = [
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.75"
-authors = ["Quarkloop"]
+authors = ["Quark"]
 license = "MIT"
 
 [workspace.dependencies]

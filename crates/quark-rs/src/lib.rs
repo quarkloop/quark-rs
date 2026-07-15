@@ -1,5 +1,5 @@
 #![allow(clippy::result_large_err)]
-//! # quark-rs — Unified Rust client SDK for the Quarkloop platform.
+//! # quark-rs — Unified Rust client SDK for the Quark platform.
 //!
 //! This crate provides a single entry point ([`QuarkClient`]) that wraps all
 //! platform service clients (auth, server, node, workflow) behind a unified
@@ -95,7 +95,7 @@ pub enum QuarkError {
 
 use std::time::Duration;
 
-/// Unified Quarkloop platform client.
+/// Unified Quark platform client.
 ///
 /// Holds pre-built sub-clients for each platform service. Created via
 /// [`QuarkClient::builder()`] or [`QuarkClient::from_parts()`].

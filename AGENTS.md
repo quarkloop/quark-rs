@@ -14,7 +14,7 @@ branches skipped, no "close enough" approximations.
 
 ## 2. What This Repository Is
 
-quark-rs is the **unified Rust client SDK** for the Quarkloop platform. It
+quark-rs is the **unified Rust client SDK** for the Quark platform. It
 provides ergonomic, builder-pattern gRPC client crates for four services:
 
 | Service | Proto crate | Client crate | Services | RPCs |
