@@ -8,17 +8,17 @@
 //! - enum variants are accessible
 
 use prost::Message;
-use workflow_api::temporal::api::common::v1::{
+use quark_workflow_proto::temporal::api::common::v1::{
     ActivityType, Header, Memo, Payload, Payloads, RetryPolicy, SearchAttributes,
     WorkflowExecution, WorkflowType,
 };
-use workflow_api::temporal::api::enums::v1::{
+use quark_workflow_proto::temporal::api::enums::v1::{
     EncodingType, TaskQueueKind, WorkflowExecutionStatus, WorkflowIdConflictPolicy,
     WorkflowIdReusePolicy,
 };
-use workflow_api::temporal::api::failure::v1::Failure;
-use workflow_api::temporal::api::taskqueue::v1::TaskQueue;
-use workflow_api::temporal::api::workflowservice::v1::{
+use quark_workflow_proto::temporal::api::failure::v1::Failure;
+use quark_workflow_proto::temporal::api::taskqueue::v1::TaskQueue;
+use quark_workflow_proto::temporal::api::workflowservice::v1::{
     StartWorkflowExecutionRequest, StartWorkflowExecutionResponse,
 };
 
@@ -428,7 +428,7 @@ fn workflow_execution_status_values() {
 
 #[test]
 fn history_service_request_construction() {
-    use workflow_api::temporal::server::api::historyservice::v1::StartWorkflowExecutionRequest as ServerStartReq;
+    use quark_workflow_proto::temporal::server::api::historyservice::v1::StartWorkflowExecutionRequest as ServerStartReq;
 
     let req = ServerStartReq::default();
     // Server request wraps the public request + namespace_id
@@ -437,7 +437,7 @@ fn history_service_request_construction() {
 
 #[test]
 fn server_enums_accessible() {
-    use workflow_api::temporal::server::api::enums::v1::WorkflowExecutionState;
+    use quark_workflow_proto::temporal::server::api::enums::v1::WorkflowExecutionState;
 
     assert_eq!(WorkflowExecutionState::Created as i32, 1);
     assert_eq!(WorkflowExecutionState::Running as i32, 2);

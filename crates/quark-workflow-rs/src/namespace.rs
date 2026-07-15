@@ -2,9 +2,7 @@
 //!
 /// Provides CRUD operations for namespaces via the `WorkflowService`
 /// and `OperatorService` gRPC APIs.
-
 use std::sync::Arc;
-use std::time::Duration;
 
 use quark_workflow_proto::temporal::api::operatorservice::v1 as ospb;
 use quark_workflow_proto::temporal::api::workflowservice::v1 as wfspb;

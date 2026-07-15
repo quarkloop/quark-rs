@@ -34,7 +34,7 @@ pub struct WorkflowOptions {
 /// Connection options for the gRPC channel.
 #[derive(Clone, Debug)]
 #[allow(dead_code)]
-pub(crate) struct ConnectionOptions {
+pub struct ConnectionOptions {
     /// Server address in `host:port` format.
     pub address: String,
 

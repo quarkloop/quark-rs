@@ -18,11 +18,15 @@ members = [
     "crates/quark-workflow-proto",
     "crates/quark-workflow-rs",
 
+    # ─── unified facade ────────────────────────────────────────────────────
+    "crates/quark-rs",
+
     # ─── examples ──────────────────────────────────────────────────────────
     "examples/auth-example",
     "examples/server-example",
     "examples/node-example",
     "examples/workflow-example",
+    "examples/unified-example",
 ]
 
 [workspace.package]

@@ -6,7 +6,6 @@
 
 use std::sync::Arc;
 
-use prost::Message as ProstMessage;
 use quark_workflow_proto::temporal::api::common::v1 as commonpb;
 
 use crate::errors::SdkError;
@@ -21,13 +20,13 @@ pub trait DataConverter: Send + Sync {
     fn to_payloads(&self, values: &[serde_json::Value]) -> Result<commonpb::Payloads, SdkError>;
 
     /// Convert a `Payloads` message back into a slice of JSON values.
-    fn from_payloads(&self, payloads: &commonpb::Payloads) -> Result<Vec<serde_json::Value>, SdkError>;
+    fn decode_payloads(&self, payloads: &commonpb::Payloads) -> Result<Vec<serde_json::Value>, SdkError>;
 
     /// Convert a single JSON value into a `Payload`.
     fn to_payload(&self, value: &serde_json::Value) -> Result<commonpb::Payload, SdkError>;
 
     /// Convert a single `Payload` back into a JSON value.
-    fn from_payload(&self, payload: &commonpb::Payload) -> Result<serde_json::Value, SdkError>;
+    fn decode_payload(&self, payload: &commonpb::Payload) -> Result<serde_json::Value, SdkError>;
 }
 
 /// JSON data converter — the default converter.
@@ -57,11 +56,11 @@ impl DataConverter for JsonDataConverter {
         Ok(commonpb::Payloads { payloads })
     }
 
-    fn from_payloads(&self, payloads: &commonpb::Payloads) -> Result<Vec<serde_json::Value>, SdkError> {
+    fn decode_payloads(&self, payloads: &commonpb::Payloads) -> Result<Vec<serde_json::Value>, SdkError> {
         payloads
             .payloads
             .iter()
-            .map(|p| self.from_payload(p))
+            .map(|p| self.decode_payload(p))
             .collect()
     }
 
@@ -79,7 +78,7 @@ impl DataConverter for JsonDataConverter {
         })
     }
 
-    fn from_payload(&self, payload: &commonpb::Payload) -> Result<serde_json::Value, SdkError> {
+    fn decode_payload(&self, payload: &commonpb::Payload) -> Result<serde_json::Value, SdkError> {
         if payload.data.is_empty() {
             return Ok(serde_json::Value::Null);
         }
@@ -94,7 +93,7 @@ pub(crate) fn to_single_payload(
     converter: &Arc<dyn DataConverter>,
     value: &serde_json::Value,
 ) -> Result<commonpb::Payloads, SdkError> {
-    converter.to_payloads(&[value.clone()])
+    converter.to_payloads(std::slice::from_ref(value))
 }
 
 /// Extracts a single typed value from a `Payloads` message.
@@ -102,7 +101,7 @@ pub(crate) fn from_single_payload<T: serde::de::DeserializeOwned>(
     converter: &Arc<dyn DataConverter>,
     payloads: &commonpb::Payloads,
 ) -> Result<T, SdkError> {
-    let values = converter.from_payloads(payloads)?;
+    let values = converter.decode_payloads(payloads)?;
     if values.is_empty() {
         return serde_json::from_value(serde_json::Value::Null).map_err(SdkError::from);
     }
@@ -118,7 +117,7 @@ mod tests {
         let converter = JsonDataConverter::new();
         let value = serde_json::json!("hello world");
         let payload = converter.to_payload(&value).unwrap();
-        let result = converter.from_payload(&payload).unwrap();
+        let result = converter.decode_payload(&payload).unwrap();
         assert_eq!(value, result);
     }
 
@@ -127,7 +126,7 @@ mod tests {
         let converter = JsonDataConverter::new();
         let value = serde_json::json!({ "orderId": "12345", "amount": 99.99 });
         let payload = converter.to_payload(&value).unwrap();
-        let result = converter.from_payload(&payload).unwrap();
+        let result = converter.decode_payload(&payload).unwrap();
         assert_eq!(value, result);
     }
 
@@ -140,7 +139,7 @@ mod tests {
             serde_json::json!({ "nested": true }),
         ];
         let payloads = converter.to_payloads(&values).unwrap();
-        let results = converter.from_payloads(&payloads).unwrap();
+        let results = converter.decode_payloads(&payloads).unwrap();
         assert_eq!(values, results);
     }
 
@@ -162,7 +161,7 @@ mod tests {
             data: vec![].into(),
             ..Default::default()
         };
-        let result = converter.from_payload(&payload).unwrap();
+        let result = converter.decode_payload(&payload).unwrap();
         assert_eq!(result, serde_json::Value::Null);
     }
 }

@@ -4,7 +4,6 @@
 //! for `WorkflowService` and `OperatorService`.
 
 use std::sync::Arc;
-use std::time::Duration;
 
 use tonic::transport::Channel;
 use quark_workflow_proto::temporal::api::operatorservice::v1::operator_service_client::OperatorServiceClient;

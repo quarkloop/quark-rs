@@ -16,7 +16,7 @@
 //!
 //! ```no_run
 //! use std::time::Duration;
-//! use server_client::ServerClient;
+//! use quark_server_rs::ServerClient;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let client = ServerClient::builder()
@@ -189,7 +189,7 @@ impl ServerClient {
 ///
 /// ```no_run
 /// use std::time::Duration;
-/// use server_client::ServerClient;
+/// use quark_server_rs::ServerClient;
 /// # async fn t() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = ServerClient::builder()
 ///     .endpoint("http://127.0.0.1:5000")

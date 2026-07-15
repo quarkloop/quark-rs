@@ -1,0 +1,10 @@
+[package]
+name = "unified-example"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+quark-rs = { path = "../../crates/quark-rs" }
+tokio = { workspace = true }

@@ -9,7 +9,7 @@
 //!
 //! ```no_run
 //! use std::time::Duration;
-//! use auth_client::AuthClient;
+//! use quark_auth_rs::AuthClient;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let client = AuthClient::builder()
@@ -239,7 +239,7 @@ impl AuthClient {
 ///
 /// ```no_run
 /// use std::time::Duration;
-/// use auth_client::AuthClient;
+/// use quark_auth_rs::AuthClient;
 /// # async fn t() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = AuthClient::builder()
 ///     .endpoint("http://127.0.0.1:5001")

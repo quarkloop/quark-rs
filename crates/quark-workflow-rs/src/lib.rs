@@ -1,3 +1,4 @@
+#![allow(dead_code, clippy::use_self, clippy::struct_excessive_bools, clippy::needless_update, clippy::useless_vec)]
 //! Type-safe Rust client SDK for the workflow-rs server.
 //!
 //! # Quick Start

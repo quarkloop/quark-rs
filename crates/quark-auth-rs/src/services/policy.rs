@@ -35,8 +35,8 @@ impl PolicyService {
     /// — construct them with the nested oneof, e.g.:
     ///
     /// ```no_run
-    /// use auth_client::proto::Principal;
-    /// use auth_client::proto::principal::Principal as PrincipalKind;
+    /// use quark_auth_rs::proto::Principal;
+    /// use quark_auth_rs::proto::principal::Principal as PrincipalKind;
     /// let p = Principal {
     ///     principal: Some(PrincipalKind::Identity("user-123".into())),
     /// };

@@ -1,0 +1,20 @@
+[package]
+name = "quark-rs"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Unified Rust client SDK for the Quarkloop platform (factory + builder pattern)"
+
+[lib]
+name = "quark_rs"
+path = "src/lib.rs"
+
+[dependencies]
+quark-auth-rs = { path = "../quark-auth-rs" }
+quark-server-rs = { path = "../quark-server-rs" }
+quark-node-rs = { path = "../quark-node-rs" }
+quark-workflow-rs = { path = "../quark-workflow-rs" }
+tonic = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

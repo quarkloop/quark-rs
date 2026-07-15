@@ -16,7 +16,7 @@
 //!
 //! ```no_run
 //! use std::time::Duration;
-//! use node_client::NodeClient;
+//! use quark_node_rs::NodeClient;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! let client = NodeClient::builder()
@@ -27,7 +27,7 @@
 //!     .await?;
 //!
 //! // Liveness check.
-//! let health = client.node().health("").await?;
+//! let health = client.node().health("", "v1").await?;
 //! println!("daemon status: {} (uptime {}ms)", health.status, health.uptime_ms);
 //!
 //! // Execute a node.
@@ -193,7 +193,7 @@ impl NodeClient {
 ///
 /// ```no_run
 /// use std::time::Duration;
-/// use node_client::NodeClient;
+/// use quark_node_rs::NodeClient;
 /// # async fn t() -> Result<(), Box<dyn std::error::Error>> {
 /// let client = NodeClient::builder()
 ///     .endpoint("http://127.0.0.1:50051")
