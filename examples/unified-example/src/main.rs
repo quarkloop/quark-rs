@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Build a unified client connecting to all platform services.
     // Only configure the services you need — unconfigured services return
     // an error when accessed.
-    let client = QuarkClient::builder()
+    let mut client = QuarkClient::builder()
         .auth_endpoint("http://127.0.0.1:5001")
         .server_endpoint("http://127.0.0.1:3000")
         .node_endpoint("http://127.0.0.1:50051")

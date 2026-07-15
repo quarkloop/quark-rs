@@ -54,8 +54,8 @@ quark-rs/
 
 | Service | Proto Crate | Client Crate | Services | RPCs |
 |---|---|---|---|---|
-| auth | `quark-auth-proto` | `quark-auth-rs` | 13 | 115 |
-| server | `quark-server-proto` | `quark-server-rs` | 1 | 8 |
+| auth | `quark-auth-proto` | `quark-auth-rs` | 10 | 91 |
+| server | `quark-server-proto` | `quark-server-rs` | 4 | 32 |
 | node | `quark-node-proto` | `quark-node-rs` | 1 | 7 |
 | workflow | `quark-workflow-proto` | `quark-workflow-rs` | 3 | ~96 |
 
@@ -109,8 +109,13 @@ let client = ServerClient::builder()
     .build()
     .await?;
 
-let registry = client.server().get_service_registry(token).await?;
-let health = client.server().get_system_health(token).await?;
+let registry = client.get_service_registry(token).await?;
+let health = client.get_system_health(token).await?;
+
+// Organization/Project/Workspace are served by the server
+let org = client.organizations().create_organization(token, "Acme", "acme").await?;
+let project = client.projects().create_project(token, &org.id, "Eng", "eng").await?;
+let workspace = client.workspaces().create_workspace(token, &project.id, "Dev").await?;
 ```
 
 **Node:**

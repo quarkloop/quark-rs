@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nth(1)
         .unwrap_or_else(|| "http://127.0.0.1:5001".to_string());
 
-    let client = AuthClient::builder()
+    let mut client = AuthClient::builder()
         .endpoint(&endpoint)
         .build()
         .await?;
@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Login
     let login = client
-        .auth()
+        
         .login("admin", "admin-api-key")
         .await
         .map_err(|e| {

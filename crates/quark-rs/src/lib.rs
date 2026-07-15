@@ -12,7 +12,7 @@
 //! use quark_rs::QuarkClient;
 //!
 //! // Build all sub-clients from a single configuration.
-//! let client = QuarkClient::builder()
+//! let mut client = QuarkClient::builder()
 //!     .auth_endpoint("http://127.0.0.1:5001")
 //!     .server_endpoint("http://127.0.0.1:3000")
 //!     .node_endpoint("http://127.0.0.1:50051")
@@ -21,8 +21,8 @@
 //!     .await?;
 //!
 //! // Access each service client (returns Result; unwrap since endpoints are configured).
-//! let login = client.auth()?.auth().login("user", "key").await?;
-//! let registry = client.server()?.server().get_service_registry("token").await?;
+//! let login = client.auth()?.login("user", "key").await?;
+//! let registry = client.server()?.get_service_registry("token").await?;
 //! let health = client.node()?.node().health("", "v1").await?;
 //! # Ok(())
 //! # }
@@ -130,8 +130,8 @@ impl QuarkClient {
     /// Access the auth service client.
     ///
     /// Returns `Err` if no auth endpoint was configured.
-    pub fn auth(&self) -> Result<&auth::AuthClient, QuarkError> {
-        self.auth.as_ref().ok_or_else(|| {
+    pub fn auth(&mut self) -> Result<&mut auth::AuthClient, QuarkError> {
+        self.auth.as_mut().ok_or_else(|| {
             QuarkError::Construction("auth endpoint not configured".into())
         })
     }
@@ -139,8 +139,8 @@ impl QuarkClient {
     /// Access the server service client.
     ///
     /// Returns `Err` if no server endpoint was configured.
-    pub fn server(&self) -> Result<&server::ServerClient, QuarkError> {
-        self.server.as_ref().ok_or_else(|| {
+    pub fn server(&mut self) -> Result<&mut server::ServerClient, QuarkError> {
+        self.server.as_mut().ok_or_else(|| {
             QuarkError::Construction("server endpoint not configured".into())
         })
     }
@@ -148,8 +148,8 @@ impl QuarkClient {
     /// Access the node service client.
     ///
     /// Returns `Err` if no node endpoint was configured.
-    pub fn node(&self) -> Result<&node::NodeClient, QuarkError> {
-        self.node.as_ref().ok_or_else(|| {
+    pub fn node(&mut self) -> Result<&mut node::NodeClient, QuarkError> {
+        self.node.as_mut().ok_or_else(|| {
             QuarkError::Construction("node endpoint not configured".into())
         })
     }
@@ -157,8 +157,8 @@ impl QuarkClient {
     /// Access the workflow service client.
     ///
     /// Returns `Err` if no workflow endpoint was configured.
-    pub fn workflow(&self) -> Result<&workflow::WorkflowClient, QuarkError> {
-        self.workflow.as_ref().ok_or_else(|| {
+    pub fn workflow(&mut self) -> Result<&mut workflow::WorkflowClient, QuarkError> {
+        self.workflow.as_mut().ok_or_else(|| {
             QuarkError::Construction("workflow endpoint not configured".into())
         })
     }
@@ -180,7 +180,7 @@ impl QuarkClient {
 /// use quark_rs::QuarkClient;
 /// use std::time::Duration;
 ///
-/// let client = QuarkClient::builder()
+/// let mut client = QuarkClient::builder()
 ///     .auth_endpoint("http://127.0.0.1:5001")
 ///     .server_endpoint("http://127.0.0.1:3000")
 ///     .connect_timeout(Duration::from_secs(5))
@@ -349,7 +349,7 @@ mod tests {
 
     #[test]
     fn from_parts_none_accessors_error() {
-        let client = QuarkClient::from_parts(None, None, None, None);
+        let mut client = QuarkClient::from_parts(None, None, None, None);
         assert!(client.auth().is_err());
         assert!(client.server().is_err());
         assert!(client.node().is_err());

@@ -12,7 +12,7 @@
 //! use quark_auth_rs::AuthClient;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let client = AuthClient::builder()
+//! let mut client = AuthClient::builder()
 //!     .endpoint("http://127.0.0.1:5001")
 //!     .connect_timeout(Duration::from_secs(5))
 //!     .request_timeout(Duration::from_secs(30))
@@ -20,7 +20,7 @@
 //!     .await?;
 //!
 //! // Public auth flow — no bearer token required.
-//! let login = client.auth().login("alice", "secret-api-key").await?;
+//! let login = client.login("alice", "secret-api-key").await?;
 //! println!("access token: {}", login.access_token);
 //!
 //! // Authenticated call — pass the access token.
@@ -122,6 +122,20 @@ impl ClientConfig {
 pub struct AuthClient {
     channel: Channel,
     config: ClientConfig,
+    auth_service: AuthService,
+}
+
+impl std::ops::Deref for AuthClient {
+    type Target = AuthService;
+    fn deref(&self) -> &Self::Target {
+        &self.auth_service
+    }
+}
+
+impl std::ops::DerefMut for AuthClient {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.auth_service
+    }
 }
 
 impl std::fmt::Debug for AuthClient {
@@ -146,9 +160,11 @@ impl AuthClient {
     /// Wrap an already-connected tonic channel. Useful for sharing a channel
     /// with other clients or for custom transport setups (TLS, middleware, …).
     pub fn from_channel(channel: Channel) -> Self {
+        let auth_service = AuthService::new(channel.clone());
         Self {
             channel,
             config: ClientConfig::empty(),
+            auth_service,
         }
     }
 
@@ -163,11 +179,9 @@ impl AuthClient {
     }
 
     // ─── service accessors ───────────────────────────────────────────────────
-
-    /// AuthService — authentication entry points (login, signup, token, verify, …).
-    pub fn auth(&self) -> AuthService {
-        AuthService::new(self.channel.clone())
-    }
+    // NOTE: AuthService methods (login, signup, token, verify, etc.) are
+    // available directly on AuthClient via Deref<Target=AuthService>.
+    // No need for a separate .auth() accessor.
 
     /// UserService — user CRUD + role assignment.
     pub fn users(&self) -> UserService {
@@ -225,7 +239,7 @@ impl AuthClient {
 /// use std::time::Duration;
 /// use quark_auth_rs::AuthClient;
 /// # async fn t() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = AuthClient::builder()
+/// let mut client = AuthClient::builder()
 ///     .endpoint("http://127.0.0.1:5001")
 ///     .connect_timeout(Duration::from_secs(5))
 ///     .request_timeout(Duration::from_secs(30))
@@ -312,9 +326,11 @@ impl AuthClientBuilder {
             .connect()
             .await
             .map_err(|e| AuthClientError::Transport(e.to_string()))?;
+        let auth_service = AuthService::new(channel.clone());
         Ok(AuthClient {
             channel,
             config: self.snapshot(),
+            auth_service,
         })
     }
 
@@ -323,9 +339,11 @@ impl AuthClientBuilder {
     pub fn build_lazy(self) -> Result<AuthClient, AuthClientError> {
         let endpoint = self.build_endpoint()?;
         let channel = endpoint.connect_lazy();
+        let auth_service = AuthService::new(channel.clone());
         Ok(AuthClient {
             channel,
             config: self.snapshot(),
+            auth_service,
         })
     }
 

@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nth(1)
         .unwrap_or_else(|| "http://127.0.0.1:3000".to_string());
 
-    let client = ServerClient::builder()
+    let mut client = ServerClient::builder()
         .endpoint(&endpoint)
         .build()
         .await?;
@@ -20,14 +20,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token = std::env::var("AUTH_TOKEN").unwrap_or_else(|_| "test-token".to_string());
 
     // Get service registry
-    let registry = client.server().get_service_registry(&token).await?;
+    let registry = client.get_service_registry(&token).await?;
     println!("Service registry:");
     for service in &registry.services {
         println!("  - {} at {}", service.name, service.grpc_url);
     }
 
     // Get system health
-    let health = client.server().get_system_health(&token).await?;
+    let health = client.get_system_health(&token).await?;
     println!("\nSystem health:");
     for service in &health.services {
         println!("  - {} (healthy: {})", service.name, service.healthy);

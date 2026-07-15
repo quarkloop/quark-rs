@@ -19,7 +19,7 @@
 //! use quark_server_rs::ServerClient;
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let client = ServerClient::builder()
+//! let mut client = ServerClient::builder()
 //!     .endpoint("http://127.0.0.1:5000")
 //!     .connect_timeout(Duration::from_secs(5))
 //!     .request_timeout(Duration::from_secs(30))
@@ -27,14 +27,13 @@
 //!     .await?;
 //!
 //! // Fetch the service registry (every RPC requires a bearer token).
-//! let registry = client.server().get_service_registry("admin-token").await?;
+//! let registry = client.get_service_registry("admin-token").await?;
 //! for svc in &registry.services {
 //!     println!("{} -> {} ({})", svc.name, svc.grpc_url, svc.version);
 //! }
 //!
 //! // Provision a new tenant.
 //! let tenant = client
-//!     .server()
 //!     .provision_tenant("admin-token", "Acme", "acme", "default")
 //!     .await?;
 //! println!("provisioned tenant: {}", tenant.id);
@@ -132,6 +131,20 @@ impl ClientConfig {
 pub struct ServerClient {
     channel: Channel,
     config: ClientConfig,
+    server_service: ServerService,
+}
+
+impl std::ops::Deref for ServerClient {
+    type Target = ServerService;
+    fn deref(&self) -> &Self::Target {
+        &self.server_service
+    }
+}
+
+impl std::ops::DerefMut for ServerClient {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.server_service
+    }
 }
 
 impl std::fmt::Debug for ServerClient {
@@ -156,9 +169,11 @@ impl ServerClient {
     /// Wrap an already-connected tonic channel. Useful for sharing a channel
     /// with other clients or for custom transport setups (TLS, middleware, …).
     pub fn from_channel(channel: Channel) -> Self {
+        let server_service = ServerService::new(channel.clone());
         Self {
             channel,
             config: ClientConfig::empty(),
+            server_service,
         }
     }
 
@@ -173,15 +188,9 @@ impl ServerClient {
     }
 
     // ─── service accessors ───────────────────────────────────────────────────
-
-    /// ServerService — orchestration, service registry, admin API.
-    ///
-    /// Covers all 8 RPCs: `GetServiceRegistry`, `Deploy`, `Rollback`,
-    /// `GetDeployment`, `ListDeployments`, `ProvisionTenant`, `ListTenants`,
-    /// `GetSystemHealth`.
-    pub fn server(&self) -> ServerService {
-        ServerService::new(self.channel.clone())
-    }
+    // NOTE: ServerService methods (get_service_registry, deploy, rollback, etc.)
+    // are available directly on ServerClient via Deref<Target=ServerService>.
+    // No need for a separate .server() accessor.
 
     /// OrganizationService — organizations CRUD + lifecycle.
     ///
@@ -221,7 +230,7 @@ impl ServerClient {
 /// use std::time::Duration;
 /// use quark_server_rs::ServerClient;
 /// # async fn t() -> Result<(), Box<dyn std::error::Error>> {
-/// let client = ServerClient::builder()
+/// let mut client = ServerClient::builder()
 ///     .endpoint("http://127.0.0.1:5000")
 ///     .connect_timeout(Duration::from_secs(5))
 ///     .request_timeout(Duration::from_secs(30))
@@ -308,9 +317,11 @@ impl ServerClientBuilder {
             .connect()
             .await
             .map_err(|e| ServerClientError::Transport(e.to_string()))?;
+        let server_service = ServerService::new(channel.clone());
         Ok(ServerClient {
             channel,
             config: self.snapshot(),
+            server_service,
         })
     }
 
@@ -319,9 +330,11 @@ impl ServerClientBuilder {
     pub fn build_lazy(self) -> Result<ServerClient, ServerClientError> {
         let endpoint = self.build_endpoint()?;
         let channel = endpoint.connect_lazy();
+        let server_service = ServerService::new(channel.clone());
         Ok(ServerClient {
             channel,
             config: self.snapshot(),
+            server_service,
         })
     }
 

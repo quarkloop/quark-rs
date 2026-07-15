@@ -24,6 +24,7 @@ use crate::error::AuthClientError;
 use crate::services::attach_bearer;
 
 /// Client for `AuthService`.
+#[derive(Clone)]
 pub struct AuthService {
     inner: AuthServiceClient<Channel>,
 }

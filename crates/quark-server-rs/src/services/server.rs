@@ -21,6 +21,7 @@ use crate::error::ServerClientError;
 use crate::services::attach_bearer;
 
 /// Client for `ServerService`.
+#[derive(Clone)]
 pub struct ServerService {
     inner: ServerServiceClient<Channel>,
 }
