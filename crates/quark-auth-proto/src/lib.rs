@@ -11,8 +11,8 @@
 //!
 //! - `common::v1` — shared types (errors, paging, identities) used across
 //!   all platform services.
-//! - `auth::v1` — auth service API (users, orgs, roles, policies, MFA,
-//!   OAuth, SSO, passkeys, etc.).
+//! - `auth::v1` — auth service API (users, roles, policies, MFA, OAuth,
+//!   SSO, passkeys, etc.).
 
 pub mod common {
     pub mod v1 {

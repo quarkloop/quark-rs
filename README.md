@@ -14,9 +14,9 @@ This workspace contains proto definitions and ergonomic builder-pattern gRPC cli
 quark-rs/
 ├── crates/
 │   ├── quark-auth-proto/         Proto files + tonic/prost codegen for auth
-│   ├── quark-auth-rs/            Builder-pattern gRPC client for auth (13 services, 115 RPCs)
+│   ├── quark-auth-rs/            Builder-pattern gRPC client for auth (10 services, 91 RPCs)
 │   ├── quark-server-proto/       Proto files + codegen for server
-│   ├── quark-server-rs/          Builder-pattern gRPC client for server (1 service, 8 RPCs)
+│   ├── quark-server-rs/          Builder-pattern gRPC client for server (4 services, 32 RPCs)
 │   ├── quark-node-proto/         Proto files + codegen for node
 │   ├── quark-node-rs/            Builder-pattern gRPC client for node (1 service, 7 RPCs)
 │   ├── quark-workflow-proto/     Proto files + codegen for workflow (Temporal API)
@@ -76,9 +76,10 @@ let client = QuarkClient::builder()
     .build()
     .await?;
 
-// Access each service client
-let login = client.auth()?.auth().login("user", "api-key").await?;
-let registry = client.server()?.server().get_service_registry(token).await?;
+// Access each service client. Auth and Server use Deref to their primary
+// service, so you can call their methods directly.
+let login = client.auth()?.login("user", "api-key").await?;
+let registry = client.server()?.get_service_registry(token).await?;
 let health = client.node()?.node().health("", "v1").await?;
 ```
 
@@ -94,7 +95,7 @@ let client = AuthClient::builder()
     .build()
     .await?;
 
-let login = client.auth().login("user", "api-key").await?;
+let login = client.login("user", "api-key").await?;
 let users = client.users().list(&login.access_token, 50, 0, "").await?;
 let factor = client.mfa().enroll_factor(&login.access_token, "totp").await?;
 ```
@@ -113,9 +114,9 @@ let registry = client.get_service_registry(token).await?;
 let health = client.get_system_health(token).await?;
 
 // Organization/Project/Workspace are served by the server
-let org = client.organizations().create_organization(token, "Acme", "acme").await?;
-let project = client.projects().create_project(token, &org.id, "Eng", "eng").await?;
-let workspace = client.workspaces().create_workspace(token, &project.id, "Dev").await?;
+let org = client.organizations().create(token, "Acme", "acme", None).await?;
+let project = client.projects().create(token, &org.id, "Eng", "eng", None).await?;
+let workspace = client.workspaces().create(token, &project.id, "Dev", None).await?;
 ```
 
 **Node:**

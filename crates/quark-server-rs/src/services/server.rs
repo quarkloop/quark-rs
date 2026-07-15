@@ -6,7 +6,7 @@
 //! `GetServiceRegistry`, `Deploy`, `Rollback`, `GetDeployment`,
 //! `ListDeployments`, `ProvisionTenant`, `ListTenants`, `GetSystemHealth`.
 //!
-//! The server server installs a single [`AuthInterceptor`] on the entire
+//! The server installs a single [`AuthInterceptor`] on the entire
 //! service (see `server/src/main.rs`), so **every RPC requires a valid bearer
 //! token**. Each method on this client takes a `token: &str` first argument
 //! and attaches it as `Authorization: Bearer …` gRPC metadata.

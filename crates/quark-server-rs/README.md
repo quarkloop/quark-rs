@@ -1,23 +1,31 @@
-# server-client
+# quark-server-rs
 
 Ergonomic, Supabase-style builder-pattern gRPC client SDK for the
-**server server**.
+**server**.
 
-`server-client` is the primary client SDK. It wraps the generated tonic client
-(`proto_gen::server::v1`) with typed convenience methods covering **all 8
-RPCs** of `ServerService` defined in
-[`proto/server.proto`](../proto/server.proto).
+`quark-server-rs` is the primary client SDK for talking to the server over
+gRPC. It wraps the generated tonic clients (`quark_server_proto::server::v1`)
+with typed convenience methods covering **all 32 RPCs** across the four
+services defined in [`proto/server.proto`](../../server/proto/server.proto):
+`ServerService`, `OrganizationService`, `ProjectService`, `WorkspaceService`.
 
-The server is *not* a gateway — client CRUD traffic never flows through
-it. It exposes only orchestration (deploy, rollback, provision),
-service-registry lookup, and admin/operator RPCs.
+The server is *not* a gateway for sibling-service CRUD — it exposes only its
+own first-class resources (organizations / projects / workspaces / deployments
+/ tenants) plus orchestration (deploy, rollback, provision), service-registry
+lookup, and admin/operator RPCs.
+
+Organization/Project/Workspace services used to be served by auth-service but
+have been migrated to the server itself.
 
 ## Table of contents
 
 - [Quick start](#quick-start)
 - [The builder pattern](#the-builder-pattern)
 - [Service clients](#service-clients)
-  - [ServerService](#serverclient) — registry, deployments, provisioning, admin (8 RPCs)
+  - [ServerService](#serverservice) — registry, deployments, provisioning, admin (8 RPCs)
+  - [OrganizationService](#organizationservice) — organization CRUD + lifecycle (8 RPCs)
+  - [ProjectService](#projectservice) — project CRUD + lifecycle (8 RPCs)
+  - [WorkspaceService](#workspaceservice) — workspace CRUD + lifecycle (8 RPCs)
 - [Authentication](#authentication)
 - [Error handling](#error-handling)
 - [Design notes](#design-notes)
@@ -29,13 +37,13 @@ service-registry lookup, and admin/operator RPCs.
 ```toml
 # Cargo.toml
 [dependencies]
-server-client = { path = "../path/to/server/client" }
+quark-server-rs = { path = "../path/to/quark-rs/crates/quark-server-rs" }
 tokio = { version = "1", features = ["full"] }
 ```
 
 ```rust,no_run
 use std::time::Duration;
-use server_client::ServerClient;
+use quark_server_rs::ServerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -47,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Every server RPC requires a bearer token.
-    let registry = client.server().get_service_registry("admin-token").await?;
+    let registry = client.get_service_registry("admin-token").await?;
     for svc in &registry.services {
         println!("{} -> {} ({})", svc.name, svc.grpc_url, svc.version);
     }
@@ -76,7 +84,7 @@ consume-and-return-self API. Finalize with either:
 
 ```rust,no_run
 use std::time::Duration;
-use server_client::ServerClient;
+use quark_server_rs::ServerClient;
 
 # async fn t() -> Result<(), Box<dyn std::error::Error>> {
 let eager = ServerClient::builder()
@@ -126,9 +134,9 @@ RPC requires a bearer token (the server's `AuthInterceptor` is installed on
 the entire service).
 
 ```rust,no_run
-# use server_client::ServerClient;
+# use quark_server_rs::ServerClient;
 # async fn t(client: &ServerClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
-let cp = client.server();
+let cp = client;
 
 // Service registry.
 let registry = cp.get_service_registry(token).await?;
@@ -161,6 +169,68 @@ let health = cp.get_system_health(token).await?;
 for svc in &health.services {
     println!("{}: healthy={} detail={:?}", svc.name, svc.healthy, svc.detail);
 }
+# Ok(()) }
+```
+
+### OrganizationService
+
+Organization CRUD + lifecycle. **8 RPCs.** All require a bearer token. Served
+directly by the server (not delegated to auth-service).
+
+```rust,no_run
+# use quark_server_rs::ServerClient;
+# async fn t(client: &ServerClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
+let orgs = client.organizations();
+
+let org = orgs.create(token, "Acme", "acme", None).await?;
+let fetched = orgs.get(token, &org.id).await?;
+let page = orgs.list(token, 50, 0).await?;
+let updated = orgs.update(token, &org.id, Some("Acme Renamed"), None).await?;
+let active = orgs.activate(token, &org.id).await?;
+let inactive = orgs.deactivate(token, &org.id).await?;
+let archived = orgs.archive(token, &org.id).await?;
+orgs.delete(token, &org.id).await?;
+# Ok(()) }
+```
+
+### ProjectService
+
+Project CRUD + lifecycle, org-scoped. **8 RPCs.** All require a bearer token.
+
+```rust,no_run
+# use quark_server_rs::ServerClient;
+# async fn t(client: &ServerClient, token: &str, org_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+let projects = client.projects();
+
+let project = projects.create(token, org_id, "My Project", "my-project", None).await?;
+let got = projects.get(token, &project.id).await?;
+let page = projects.list(token, org_id, 50, 0).await?;
+let updated = projects.update(token, &project.id, Some("Renamed"), None).await?;
+let active = projects.activate(token, &project.id).await?;
+let inactive = projects.deactivate(token, &project.id).await?;
+let archived = projects.archive(token, &project.id).await?;
+projects.delete(token, &project.id).await?;
+# Ok(()) }
+```
+
+### WorkspaceService
+
+Workspace CRUD + lifecycle, project-scoped. **8 RPCs.** All require a bearer
+token.
+
+```rust,no_run
+# use quark_server_rs::ServerClient;
+# async fn t(client: &ServerClient, token: &str, project_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+let workspaces = client.workspaces();
+
+let ws = workspaces.create(token, project_id, "Dev", None).await?;
+let got = workspaces.get(token, &ws.id).await?;
+let page = workspaces.list(token, project_id, 50, 0).await?;
+let updated = workspaces.update(token, &ws.id, Some("Dev Renamed"), None).await?;
+let active = workspaces.activate(token, &ws.id).await?;
+let inactive = workspaces.deactivate(token, &ws.id).await?;
+let archived = workspaces.archive(token, &ws.id).await?;
+workspaces.delete(token, &ws.id).await?;
 # Ok(()) }
 ```
 
@@ -198,9 +268,9 @@ three variants:
 ergonomic. Helper methods make status introspection concise:
 
 ```rust,no_run
-use server_client::{ServerClient, ServerClientError};
+use quark_server_rs::{ServerClient, ServerClientError};
 # async fn t(client: &ServerClient, token: &str) -> Result<(), ServerClientError> {
-match client.server().get_deployment(token, "missing-id").await {
+match client.get_deployment(token, "missing-id").await {
     Ok(d) => println!("deployment: {d:?}"),
     Err(e) if e.is_not_found() => println!("no such deployment"),
     Err(e) if e.is_unauthenticated() => println!("token expired — re-login"),
@@ -226,7 +296,8 @@ Available helpers: `is_transport`, `is_status`, `status_code`, `as_status`,
 - **No raw proto request types at the call site.** Callers pass Rust
   primitives and slices; the SDK builds the proto request internally.
 - **Cheap service clients.** The accessor clones the shared `Channel`
-  (HTTP/2-multiplexed), so `client.server()` is essentially free. Hold
+  (HTTP/2-multiplexed), so `client.organizations()`, `client.projects()`, etc.
+  are essentially free. Hold
   the returned service client for a sequence of calls, or call the accessor
   inline for one-offs.
 - **`google.protobuf.Empty`.** RPCs that take `Empty` (`GetServiceRegistry`,

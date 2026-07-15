@@ -39,7 +39,7 @@ The SDK is organized into modules with strict single-responsibility:
 
 ## Dependencies
 
-- `workflow-api` — proto types (path dependency)
+- `quark-workflow-proto` — proto types (path dependency)
 - `tonic` — gRPC client
 - `prost` — protobuf
 - `serde` / `serde_json` — JSON data converter
@@ -50,13 +50,13 @@ The SDK is organized into modules with strict single-responsibility:
 ## Build & test
 
 ```bash
-cargo build -p workflow-sdk
-cargo test  -p workflow-sdk
+cargo build -p quark-workflow-rs
+cargo test  -p quark-workflow-rs
 ```
 
 ## Examples
 
-Examples live in `../../examples/src/rust/` and are verified against a
+Examples live in `../../examples/workflow-example/` and are verified against a
 running server:
 
 - `start_and_result.rs` — Start a workflow, act as worker, get result

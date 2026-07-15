@@ -42,7 +42,7 @@ pub mod auth {
     pub use quark_auth_rs::*;
 }
 
-/// Server (server) service client SDK.
+/// Server service client SDK.
 pub mod server {
     pub use quark_server_rs::*;
 }
@@ -213,7 +213,7 @@ impl QuarkClientBuilder {
         self
     }
 
-    /// Set the server (server) endpoint URL.
+    /// Set the server endpoint URL.
     pub fn server_endpoint(mut self, url: impl Into<String>) -> Self {
         self.server_endpoint = Some(url.into());
         self

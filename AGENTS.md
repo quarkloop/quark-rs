@@ -19,13 +19,24 @@ provides ergonomic, builder-pattern gRPC client crates for four services:
 
 | Service | Proto crate | Client crate | Services | RPCs |
 |---|---|---|---|---|
-| auth | `quark-auth-proto` | `quark-auth-rs` | 13 | 115 |
-| server | `quark-server-proto` | `quark-server-rs` | 1 | 8 |
+| auth | `quark-auth-proto` | `quark-auth-rs` | 10 | 91 |
+| server | `quark-server-proto` | `quark-server-rs` | 4 | 32 |
 | node | `quark-node-proto` | `quark-node-rs` | 1 | 7 |
 | workflow | `quark-workflow-proto` | `quark-workflow-rs` | 3 | ~96 |
 
 The unified facade crate `quark-rs` wraps all four sub-clients behind a single
 `QuarkClient` with a `QuarkClientBuilder`.
+
+**Service ownership after the org/project/workspace migration:**
+
+- `quark-auth-rs` owns: AuthService, UserService, IdentityService, MFAService,
+  PasskeyService, SSOService, OAuthServerService, AdminService, RoleService,
+  PolicyService.
+- `quark-server-rs` owns: ServerService, OrganizationService, ProjectService,
+  WorkspaceService.
+- Role/Policy are still in auth (org-scoped via `organization_id` FK).
+- Organization/Project/Workspace are now in server (no longer delegated to
+  auth-service).
 
 ## 3. Workspace Layout
 

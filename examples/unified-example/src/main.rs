@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.auth() {
         Ok(_auth) => {
             println!("Auth client ready");
-            // let login = auth.auth().login("user", "key").await?;
+            // let login = _auth.login("user", "key").await?;
         }
         Err(e) => println!("Auth not configured: {e}"),
     }
@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.server() {
         Ok(_server) => {
             println!("Server client ready");
-            // let registry = server.server().get_service_registry(token).await?;
+            // let registry = _server.get_service_registry(token).await?;
         }
         Err(e) => println!("Server not configured: {e}"),
     }
@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.node() {
         Ok(_node) => {
             println!("Node client ready");
-            // let health = node.node().health("", "v1").await?;
+            // let health = _node.health("", "v1").await?;
         }
         Err(e) => println!("Node not configured: {e}"),
     }
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.workflow() {
         Ok(_workflow) => {
             println!("Workflow client ready");
-            // let namespaces = workflow.namespace().list().await?;
+            // let namespaces = _workflow.namespace().list().await?;
         }
         Err(e) => println!("Workflow not configured: {e}"),
     }

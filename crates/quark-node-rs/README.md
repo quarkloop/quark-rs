@@ -1,11 +1,11 @@
-# node-client
+# quark-node-rs
 
 Ergonomic, Supabase-style builder-pattern gRPC client SDK for the
 **`quark-noded`** daemon.
 
-`node-client` is the primary client SDK. It wraps the generated tonic client
-(`quark_proto_gen::v1`) with typed convenience methods covering **all 7 RPCs**
-of `NodeService` defined in [`proto/node.proto`](../proto/node.proto).
+`quark-node-rs` is the primary client SDK. It wraps the generated tonic client
+(`quark_node_proto::v1`) with typed convenience methods covering **all 7 RPCs**
+of `NodeService` defined in [`proto/node.proto`](../../quark-rs/crates/quark-node-proto/proto/node.proto).
 
 The daemon listens on `--grpc-addr` (default `0.0.0.0:50051`) and serves the
 seven RPCs: `Execute`, `Cancel`, `Health`, `Ready`, `Status`, `Drain`,
@@ -30,13 +30,13 @@ architectural rationale.
 ```toml
 # Cargo.toml
 [dependencies]
-node-client = { path = "../path/to/node/client" }
+quark-node-rs = { path = "../path/to/quark-rs/crates/quark-node-rs" }
 tokio = { version = "1", features = ["full"] }
 ```
 
 ```rust,no_run
 use std::time::Duration;
-use node_client::NodeClient;
+use quark_node_rs::NodeClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -48,11 +48,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Liveness check.
-    let health = client.node().health("").await?;
+    let health = client.node().health("", "v1").await?;
     println!("daemon status: {} (uptime {}ms)", health.status, health.uptime_ms);
 
     // Readiness check.
-    let ready = client.node().ready("").await?;
+    let ready = client.node().ready("", "v1").await?;
     if !ready.ready {
         println!("daemon not ready: {}", ready.reason);
         return Ok(());
@@ -90,7 +90,7 @@ consume-and-return-self API. Finalize with either:
 
 ```rust,no_run
 use std::time::Duration;
-use node_client::NodeClient;
+use quark_node_rs::NodeClient;
 
 # async fn t() -> Result<(), Box<dyn std::error::Error>> {
 let eager = NodeClient::builder()
@@ -137,14 +137,14 @@ proto response.
 The gRPC API for the node execution daemon. **7 RPCs.**
 
 ```rust,no_run
-# use node_client::NodeClient;
+# use quark_node_rs::NodeClient;
 # async fn t(client: &NodeClient) -> Result<(), Box<dyn std::error::Error>> {
 let node = client.node();
 
 // Liveness / readiness / status.
-let health = node.health("").await?;
-let ready = node.ready("").await?;
-let status = node.status("").await?;
+let health = node.health("", "v1").await?;
+let ready = node.ready("", "v1").await?;
+let status = node.status("", "v1").await?;
 println!("host_id: {}, uptime: {}ms", status.host_id, status.uptime_ms);
 
 // Execute a node. `input` is a `prost_types::Value`; pass `None` for no input.
@@ -214,9 +214,9 @@ variants:
 ergonomic. Helper methods make status introspection concise:
 
 ```rust,no_run
-use node_client::{NodeClient, NodeClientError};
+use quark_node_rs::{NodeClient, NodeClientError};
 # async fn t(client: &NodeClient) -> Result<(), NodeClientError> {
-match client.node().health("").await {
+match client.node().health("", "v1").await {
     Ok(h) => println!("status: {}", h.status),
     Err(e) if e.is_unavailable() => println!("daemon is down or unreachable"),
     Err(e) if e.is_deadline_exceeded() => println!("daemon timed out"),

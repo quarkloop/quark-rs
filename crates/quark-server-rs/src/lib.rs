@@ -1,16 +1,19 @@
-//! Ergonomic gRPC client SDK for the server server.
+//! Ergonomic gRPC client SDK for the server.
 //!
-//! `server-client` is the primary client SDK for talking to the server
-//! server over gRPC. It wraps the generated tonic client (from
-//! `quark_server_proto::server::v1`) with a Supabase-style builder pattern and
-//! typed convenience methods covering **all 8 RPCs** of `ServerService`
-//! defined in [`proto/server.proto`](../proto/server.proto).
+//! `quark-server-rs` is the primary client SDK for talking to the server over
+//! gRPC. It wraps the generated tonic clients (from
+//! `quark_server_proto::server::v1`) with a Supabase-style builder pattern
+//! and typed convenience methods covering **all 32 RPCs** across the four
+//! services defined in [`proto/server.proto`](../proto/server.proto):
+//! `ServerService`, `OrganizationService`, `ProjectService`, `WorkspaceService`.
 //!
-//! The server is *not* a gateway: client CRUD traffic never flows
-//! through it. It exposes only orchestration (deploy, rollback, provision),
-//! service-registry lookup, and admin/operator RPCs. Every RPC is gated by the
-//! server-side `AuthInterceptor`, so every method on the SDK takes a `token:
-//! &str` first argument and attaches it as `Authorization: Bearer …` metadata.
+//! The server is *not* a gateway for sibling-service CRUD — it exposes only
+//! its own first-class resources (organizations / projects / workspaces /
+//! deployments / tenants) plus orchestration (deploy, rollback, provision),
+//! service-registry lookup, and admin/operator RPCs. Every RPC is gated by
+//! the server-side `AuthInterceptor`, so every method on the SDK takes a
+//! `token: &str` first argument and attaches it as `Authorization: Bearer …`
+//! metadata.
 //!
 //! # Quick start
 //!
@@ -48,9 +51,16 @@
 //! returns a cheap, owned service client built from a cloned
 //! [`tonic::transport::Channel`]:
 //!
-//! | Accessor                       | Service client              | Service              |
-//! |--------------------------------|-----------------------------|----------------------|
-//! | [`ServerClient::server`]| [`services::ServerService`] | ServerService |
+//! | Accessor                       | Service client                    | Service              |
+//! |--------------------------------|-----------------------------------|----------------------|
+//! | (Deref to `ServerService`)     | [`services::ServerService`]       | ServerService        |
+//! | [`ServerClient::organizations`] | [`services::OrganizationService`] | OrganizationService  |
+//! | [`ServerClient::projects`]     | [`services::ProjectService`]      | ProjectService       |
+//! | [`ServerClient::workspaces`]   | [`services::WorkspaceService`]    | WorkspaceService     |
+//!
+//! `ServerService` methods (get_service_registry, deploy, rollback, etc.)
+//! are available directly on `ServerClient` via `Deref<Target=ServerService>`
+//! — no need for a separate `.server()` accessor.
 //!
 //! Service clients are created on demand and cheap to clone — the underlying
 //! gRPC channel is multiplexed (HTTP/2) and shared.
@@ -62,9 +72,8 @@
 // crate-wide.
 #![allow(clippy::too_many_arguments)]
 // `ServerClientError` holds a `tonic::Status` (~176 bytes) so its `Result`s
-// trip `result_large_err`. This matches the precedent set by the sibling
-// `auth-client` crate and is inherent to surfacing full gRPC status details to
-// callers.
+// trip `result_large_err`. This is inherent to surfacing full gRPC status
+// details to callers.
 #![allow(clippy::result_large_err)]
 
 pub mod error;
@@ -121,8 +130,8 @@ impl ClientConfig {
 /// Top-level server client.
 ///
 /// Holds a single multiplexed gRPC [`Channel`] shared by every service client.
-/// Each accessor (`server()`, …) clones the channel (cheap) and wraps
-/// the generated tonic client.
+/// Each accessor (`organizations()`, `projects()`, `workspaces()`) clones the
+/// channel (cheap) and wraps the generated tonic client.
 ///
 /// Create one with [`ServerClient::builder`] (recommended) or
 /// [`ServerClient::connect`], or wrap an existing channel with

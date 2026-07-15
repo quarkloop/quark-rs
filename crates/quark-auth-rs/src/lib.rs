@@ -1,9 +1,15 @@
 //! Ergonomic gRPC client SDK for the auth-service.
 //!
-//! `auth-client` is the primary client SDK for talking to the auth-service over
-//! gRPC. It wraps the generated tonic clients (from `quark_auth_proto::auth::v1`) with
-//! a Supabase-style builder pattern and typed convenience methods covering
-//! **all 13 services** and **all 115 RPCs** defined in `proto/auth.proto`.
+//! `quark-auth-rs` is the primary client SDK for talking to the auth-service
+//! over gRPC. It wraps the generated tonic clients (from
+//! `quark_auth_proto::auth::v1`) with a Supabase-style builder pattern and
+//! typed convenience methods covering **all 10 services** and **all 91 RPCs**
+//! defined in `proto/auth.proto`.
+//!
+//! Organization / Project / Workspace services used to live in
+//! `platform.auth.v1` but have been migrated to the server component
+//! (`platform.server.v1`). Use `quark-server-rs` for those services.
+//! Role/Policy services remain here.
 //!
 //! # Quick start
 //!
@@ -36,11 +42,22 @@
 //! Every proto service has a dedicated accessor on [`AuthClient`] that returns
 //! a cheap, owned service client built from a cloned [`tonic::transport::Channel`]:
 //!
-//! | Accessor              | Service client        | Service            |
-//! |-----------------------|-----------------------|--------------------|
-//! | [`AuthClient::auth`]  | [`services::AuthService`]    | AuthService    |
-//! | [`AuthClient::users`] | [`services::UserService`]   | UserService     |
-//! | ...                   | ...                   | ...                |
+//! | Accessor                       | Service client                  | Service              |
+//! |--------------------------------|---------------------------------|----------------------|
+//! | (Deref to `AuthService`)       | [`services::AuthService`]       | AuthService          |
+//! | [`AuthClient::users`]          | [`services::UserService`]       | UserService          |
+//! | [`AuthClient::identities`]     | [`services::IdentityService`]   | IdentityService      |
+//! | [`AuthClient::mfa`]            | [`services::MfaService`]        | MFAService           |
+//! | [`AuthClient::passkeys`]       | [`services::PasskeyService`]    | PasskeyService       |
+//! | [`AuthClient::sso`]            | [`services::SsoService`]        | SSOService           |
+//! | [`AuthClient::oauth_server`]   | [`services::OAuthServerService`] | OAuthServerService   |
+//! | [`AuthClient::admin`]          | [`services::AdminService`]      | AdminService         |
+//! | [`AuthClient::roles`]          | [`services::RoleService`]       | RoleService          |
+//! | [`AuthClient::policies`]       | [`services::PolicyService`]     | PolicyService        |
+//!
+//! `AuthService` methods (login, signup, token, verify, etc.) are available
+//! directly on `AuthClient` via `Deref<Target=AuthService>` — no need for a
+//! separate `.auth()` accessor.
 //!
 //! Service clients are created on demand and cheap to clone — the underlying
 //! gRPC channel is multiplexed (HTTP/2) and shared.
@@ -52,9 +69,8 @@
 // crate-wide.
 #![allow(clippy::too_many_arguments)]
 // `AuthClientError` holds a `tonic::Status` (~176 bytes) so its `Result`s trip
-// `result_large_err`. This matches the precedent set by the sibling
-// `auth-admin-client` crate and is inherent to surfacing full gRPC status
-// details to callers.
+// `result_large_err`. This is inherent to surfacing full gRPC status details to
+// callers.
 #![allow(clippy::result_large_err)]
 
 pub mod error;
