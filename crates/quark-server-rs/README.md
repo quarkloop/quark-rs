@@ -1,14 +1,14 @@
 # server-client
 
 Ergonomic, Supabase-style builder-pattern gRPC client SDK for the
-**control-plane server**.
+**server server**.
 
 `server-client` is the primary client SDK. It wraps the generated tonic client
-(`proto_gen::controlplane::v1`) with typed convenience methods covering **all 8
-RPCs** of `ControlPlaneService` defined in
-[`proto/controlplane.proto`](../proto/controlplane.proto).
+(`proto_gen::server::v1`) with typed convenience methods covering **all 8
+RPCs** of `ServerService` defined in
+[`proto/server.proto`](../proto/server.proto).
 
-The control-plane is *not* a gateway — client CRUD traffic never flows through
+The server is *not* a gateway — client CRUD traffic never flows through
 it. It exposes only orchestration (deploy, rollback, provision),
 service-registry lookup, and admin/operator RPCs.
 
@@ -17,7 +17,7 @@ service-registry lookup, and admin/operator RPCs.
 - [Quick start](#quick-start)
 - [The builder pattern](#the-builder-pattern)
 - [Service clients](#service-clients)
-  - [ControlPlaneClient](#controlplaneclient) — registry, deployments, provisioning, admin (8 RPCs)
+  - [ServerService](#serverclient) — registry, deployments, provisioning, admin (8 RPCs)
 - [Authentication](#authentication)
 - [Error handling](#error-handling)
 - [Design notes](#design-notes)
@@ -46,15 +46,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build()
         .await?;
 
-    // Every control-plane RPC requires a bearer token.
-    let registry = client.control_plane().get_service_registry("admin-token").await?;
+    // Every server RPC requires a bearer token.
+    let registry = client.server().get_service_registry("admin-token").await?;
     for svc in &registry.services {
         println!("{} -> {} ({})", svc.name, svc.grpc_url, svc.version);
     }
 
     // Provision a new tenant.
     let tenant = client
-        .control_plane()
+        .server()
         .provision_tenant("admin-token", "Acme", "acme", "default")
         .await?;
     println!("provisioned tenant: {}", tenant.id);
@@ -106,7 +106,7 @@ There are two convenience constructors:
 
 The [`ServerClient`] holds a single multiplexed HTTP/2
 [`tonic::transport::Channel`](tonic::transport::Channel). Every service
-accessor (`control_plane()`, …) **clones** the channel (cheap) and wraps the
+accessor (`server()`, …) **clones** the channel (cheap) and wraps the
 generated tonic client, so service clients are created on demand and discarded
 freely.
 
@@ -119,7 +119,7 @@ types), builds the proto request internally, attaches a `Bearer` token when the
 RPC requires authentication, calls the generated tonic client, and returns the
 proto response (or `()` for `google.protobuf.Empty` returns).
 
-### ControlPlaneClient
+### ServerService
 
 Orchestration, service registry, and admin/operator RPCs. **8 RPCs.** Every
 RPC requires a bearer token (the server's `AuthInterceptor` is installed on
@@ -128,7 +128,7 @@ the entire service).
 ```rust,no_run
 # use server_client::ServerClient;
 # async fn t(client: &ServerClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
-let cp = client.control_plane();
+let cp = client.server();
 
 // Service registry.
 let registry = cp.get_service_registry(token).await?;
@@ -169,8 +169,8 @@ for svc in &health.services {
 ## Authentication
 
 Unlike `auth-service` (which mixes public and authenticated RPCs), the
-control-plane installs a single `AuthInterceptor` on the *entire*
-`ControlPlaneService`. **Every RPC requires a valid bearer token.** Pass the
+server installs a single `AuthInterceptor` on the *entire*
+`ServerService`. **Every RPC requires a valid bearer token.** Pass the
 access token as the first `token: &str` argument to every method; the SDK
 attaches it as `Authorization: Bearer …` gRPC metadata.
 
@@ -200,7 +200,7 @@ ergonomic. Helper methods make status introspection concise:
 ```rust,no_run
 use server_client::{ServerClient, ServerClientError};
 # async fn t(client: &ServerClient, token: &str) -> Result<(), ServerClientError> {
-match client.control_plane().get_deployment(token, "missing-id").await {
+match client.server().get_deployment(token, "missing-id").await {
     Ok(d) => println!("deployment: {d:?}"),
     Err(e) if e.is_not_found() => println!("no such deployment"),
     Err(e) if e.is_unauthenticated() => println!("token expired — re-login"),
@@ -226,11 +226,11 @@ Available helpers: `is_transport`, `is_status`, `status_code`, `as_status`,
 - **No raw proto request types at the call site.** Callers pass Rust
   primitives and slices; the SDK builds the proto request internally.
 - **Cheap service clients.** The accessor clones the shared `Channel`
-  (HTTP/2-multiplexed), so `client.control_plane()` is essentially free. Hold
+  (HTTP/2-multiplexed), so `client.server()` is essentially free. Hold
   the returned service client for a sequence of calls, or call the accessor
   inline for one-offs.
 - **`google.protobuf.Empty`.** RPCs that take `Empty` (`GetServiceRegistry`,
   `GetSystemHealth`) need no request argument; the SDK passes `()` and attaches
   the bearer metadata to an empty-body request.
-- **Escape hatch.** `ControlPlaneClient::inner()` exposes the underlying tonic
+- **Escape hatch.** `ServerService::inner()` exposes the underlying tonic
   client for direct access when you need something the wrapper doesn't surface.

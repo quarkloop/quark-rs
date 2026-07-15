@@ -1,4 +1,4 @@
-//! Error type for the control-plane client SDK.
+//! Error type for the server client SDK.
 
 use thiserror::Error;
 

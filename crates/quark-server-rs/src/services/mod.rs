@@ -1,7 +1,7 @@
 //! Per-service client wrappers.
 //!
 //! Each module wraps one generated tonic client (e.g.
-//! `ControlPlaneServiceClient`) with typed, ergonomic convenience methods.
+//! `ServerServiceClient`) with typed, ergonomic convenience methods.
 //! The pattern is uniform across every service:
 //!
 //! 1. Accept typed Rust parameters (not raw proto request types).
@@ -12,7 +12,7 @@
 //! 5. Return the proto response (or `()` for `google.protobuf.Empty` returns),
 //!    mapping `tonic::Status` → [`crate::ServerClientError`].
 
-pub mod control_plane;
+pub mod server;
 
 use tonic::metadata::MetadataValue;
 use tonic::Request;

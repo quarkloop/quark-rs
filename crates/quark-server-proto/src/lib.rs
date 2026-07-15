@@ -1,6 +1,6 @@
 //! Generated gRPC code from `proto/`.
 //!
-//! This crate is the single source of truth for the server (control-plane)
+//! This crate is the single source of truth for the server (server)
 //! API surface. It generates tonic/prost Rust bindings from the `.proto`
 //! files in the workspace `proto/` directory.
 //!
@@ -13,12 +13,12 @@
 //!   all platform services.
 //! - `auth::v1` — auth service API (used by `auth-core` for token
 //!   introspection).
-//! - `controlplane::v1` — control-plane server API (orchestration, registry,
+//! - `server::v1` — server server API (orchestration, registry,
 //!   admin).
-//! - `release::v1` — release service API (referenced by control-plane).
-//! - `workflow::v1` — workflow service API (referenced by control-plane).
-//! - `secrets::v1` — secrets service API (referenced by control-plane).
-//! - `nodes::v1` — nodes service API (referenced by control-plane).
+//! - `release::v1` — release service API (referenced by server).
+//! - `workflow::v1` — workflow service API (referenced by server).
+//! - `secrets::v1` — secrets service API (referenced by server).
+//! - `nodes::v1` — nodes service API (referenced by server).
 
 pub mod common {
     pub mod v1 {
@@ -35,9 +35,9 @@ pub mod auth {
     }
 }
 
-pub mod controlplane {
+pub mod server {
     pub mod v1 {
-        tonic::include_proto!("platform.controlplane.v1");
+        tonic::include_proto!("platform.server.v1");
     }
 }
 

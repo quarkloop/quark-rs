@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     match client.server() {
         Ok(_server) => {
             println!("Server client ready");
-            // let registry = server.control_plane().get_service_registry(token).await?;
+            // let registry = server.server().get_service_registry(token).await?;
         }
         Err(e) => println!("Server not configured: {e}"),
     }

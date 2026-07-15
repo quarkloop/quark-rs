@@ -1,12 +1,12 @@
-//! Ergonomic gRPC client SDK for the control-plane server.
+//! Ergonomic gRPC client SDK for the server server.
 //!
-//! `server-client` is the primary client SDK for talking to the control-plane
+//! `server-client` is the primary client SDK for talking to the server
 //! server over gRPC. It wraps the generated tonic client (from
-//! `quark_server_proto::controlplane::v1`) with a Supabase-style builder pattern and
-//! typed convenience methods covering **all 8 RPCs** of `ControlPlaneService`
-//! defined in [`proto/controlplane.proto`](../proto/controlplane.proto).
+//! `quark_server_proto::server::v1`) with a Supabase-style builder pattern and
+//! typed convenience methods covering **all 8 RPCs** of `ServerService`
+//! defined in [`proto/server.proto`](../proto/server.proto).
 //!
-//! The control-plane is *not* a gateway: client CRUD traffic never flows
+//! The server is *not* a gateway: client CRUD traffic never flows
 //! through it. It exposes only orchestration (deploy, rollback, provision),
 //! service-registry lookup, and admin/operator RPCs. Every RPC is gated by the
 //! server-side `AuthInterceptor`, so every method on the SDK takes a `token:
@@ -27,14 +27,14 @@
 //!     .await?;
 //!
 //! // Fetch the service registry (every RPC requires a bearer token).
-//! let registry = client.control_plane().get_service_registry("admin-token").await?;
+//! let registry = client.server().get_service_registry("admin-token").await?;
 //! for svc in &registry.services {
 //!     println!("{} -> {} ({})", svc.name, svc.grpc_url, svc.version);
 //! }
 //!
 //! // Provision a new tenant.
 //! let tenant = client
-//!     .control_plane()
+//!     .server()
 //!     .provision_tenant("admin-token", "Acme", "acme", "default")
 //!     .await?;
 //! println!("provisioned tenant: {}", tenant.id);
@@ -51,7 +51,7 @@
 //!
 //! | Accessor                       | Service client              | Service              |
 //! |--------------------------------|-----------------------------|----------------------|
-//! | [`ServerClient::control_plane`]| [`services::ControlPlaneClient`] | ControlPlaneService |
+//! | [`ServerClient::server`]| [`services::ServerService`] | ServerService |
 //!
 //! Service clients are created on demand and cheap to clone — the underlying
 //! gRPC channel is multiplexed (HTTP/2) and shared.
@@ -79,9 +79,9 @@ use tonic::transport::{Channel, Endpoint};
 // Re-export the generated proto modules so callers don't need to depend on
 // `proto-gen` directly to name request/response types.
 pub use quark_server_proto::common::v1 as common;
-pub use quark_server_proto::controlplane::v1 as proto;
+pub use quark_server_proto::server::v1 as proto;
 
-pub use services::control_plane::ControlPlaneClient;
+pub use services::server::ServerService;
 
 /// Snapshot of the configuration used to build a [`ServerClient`].
 ///
@@ -116,10 +116,10 @@ impl ClientConfig {
     }
 }
 
-/// Top-level control-plane client.
+/// Top-level server client.
 ///
 /// Holds a single multiplexed gRPC [`Channel`] shared by every service client.
-/// Each accessor (`control_plane()`, …) clones the channel (cheap) and wraps
+/// Each accessor (`server()`, …) clones the channel (cheap) and wraps
 /// the generated tonic client.
 ///
 /// Create one with [`ServerClient::builder`] (recommended) or
@@ -171,13 +171,13 @@ impl ServerClient {
 
     // ─── service accessors ───────────────────────────────────────────────────
 
-    /// ControlPlaneService — orchestration, service registry, admin API.
+    /// ServerService — orchestration, service registry, admin API.
     ///
     /// Covers all 8 RPCs: `GetServiceRegistry`, `Deploy`, `Rollback`,
     /// `GetDeployment`, `ListDeployments`, `ProvisionTenant`, `ListTenants`,
     /// `GetSystemHealth`.
-    pub fn control_plane(&self) -> ControlPlaneClient {
-        ControlPlaneClient::new(self.channel.clone())
+    pub fn server(&self) -> ServerService {
+        ServerService::new(self.channel.clone())
     }
 }
 
@@ -215,8 +215,8 @@ pub struct ServerClientBuilder {
 }
 
 impl ServerClientBuilder {
-    /// Set the control-plane endpoint URL (e.g. `http://127.0.0.1:5000` or
-    /// `https://controlplane.example.com`). Required.
+    /// Set the server endpoint URL (e.g. `http://127.0.0.1:5000` or
+    /// `https://server.example.com`). Required.
     pub fn endpoint(mut self, url: impl Into<String>) -> Self {
         self.endpoint = Some(url.into());
         self

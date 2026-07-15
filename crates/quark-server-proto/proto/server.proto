@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package platform.controlplane.v1;
+package platform.server.v1;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
@@ -8,16 +8,16 @@ import "common/identities.proto";
 import "common/paging.proto";
 
 // ===========================================================================
-// ControlPlaneService — orchestration, service registry, admin API.
+// ServerService — orchestration, service registry, admin API.
 //
 // This is NOT a gateway. Client CRUD traffic never flows through here.
-// The control-plane handles only:
+// The server handles only:
 //   1. Cross-service orchestration (deploy, rollback, provision)
 //   2. Service registry (clients fetch once, cache)
 //   3. Admin/operator RPCs
 // ===========================================================================
 
-service ControlPlaneService {
+service ServerService {
   // ─── Service registry ──────────────────────────────────────────────────
   rpc GetServiceRegistry(google.protobuf.Empty) returns (ServiceRegistry);
 

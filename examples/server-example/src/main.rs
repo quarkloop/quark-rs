@@ -20,14 +20,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token = std::env::var("AUTH_TOKEN").unwrap_or_else(|_| "test-token".to_string());
 
     // Get service registry
-    let registry = client.control_plane().get_service_registry(&token).await?;
+    let registry = client.server().get_service_registry(&token).await?;
     println!("Service registry:");
     for service in &registry.services {
         println!("  - {} at {}", service.name, service.grpc_url);
     }
 
     // Get system health
-    let health = client.control_plane().get_system_health(&token).await?;
+    let health = client.server().get_system_health(&token).await?;
     println!("\nSystem health:");
     for service in &health.services {
         println!("  - {} (healthy: {})", service.name, service.healthy);

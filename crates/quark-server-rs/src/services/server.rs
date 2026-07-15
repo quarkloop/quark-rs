@@ -1,12 +1,12 @@
-//! ControlPlaneService — orchestration, service registry, admin API.
+//! ServerService — orchestration, service registry, admin API.
 //!
-//! Wraps `quark_server_proto::controlplane::v1::control_plane_service_client::ControlPlaneServiceClient`.
+//! Wraps `quark_server_proto::server::v1::server_service_client::ServerServiceClient`.
 //!
-//! Covers all 8 RPCs of `ControlPlaneService`:
+//! Covers all 8 RPCs of `ServerService`:
 //! `GetServiceRegistry`, `Deploy`, `Rollback`, `GetDeployment`,
 //! `ListDeployments`, `ProvisionTenant`, `ListTenants`, `GetSystemHealth`.
 //!
-//! The control-plane server installs a single [`AuthInterceptor`] on the entire
+//! The server server installs a single [`AuthInterceptor`] on the entire
 //! service (see `server/src/main.rs`), so **every RPC requires a valid bearer
 //! token**. Each method on this client takes a `token: &str` first argument
 //! and attaches it as `Authorization: Bearer …` gRPC metadata.
@@ -14,27 +14,27 @@
 //! [`AuthInterceptor`]: ../../server/src/interceptors/auth.rs
 
 use quark_server_proto::common::v1::PageQuery;
-use quark_server_proto::controlplane::v1::control_plane_service_client::ControlPlaneServiceClient;
+use quark_server_proto::server::v1::server_service_client::ServerServiceClient;
 use tonic::transport::Channel;
 
 use crate::error::ServerClientError;
 use crate::services::attach_bearer;
 
-/// Client for `ControlPlaneService`.
-pub struct ControlPlaneClient {
-    inner: ControlPlaneServiceClient<Channel>,
+/// Client for `ServerService`.
+pub struct ServerService {
+    inner: ServerServiceClient<Channel>,
 }
 
-impl ControlPlaneClient {
-    /// Wrap a generated `ControlPlaneServiceClient` over a shared channel.
+impl ServerService {
+    /// Wrap a generated `ServerServiceClient` over a shared channel.
     pub fn new(channel: Channel) -> Self {
         Self {
-            inner: ControlPlaneServiceClient::new(channel),
+            inner: ServerServiceClient::new(channel),
         }
     }
 
     /// Borrow the underlying tonic client (escape hatch for advanced use).
-    pub fn inner(&mut self) -> &mut ControlPlaneServiceClient<Channel> {
+    pub fn inner(&mut self) -> &mut ServerServiceClient<Channel> {
         &mut self.inner
     }
 
@@ -45,7 +45,7 @@ impl ControlPlaneClient {
     pub async fn get_service_registry(
         &mut self,
         token: &str,
-    ) -> Result<quark_server_proto::controlplane::v1::ServiceRegistry, ServerClientError> {
+    ) -> Result<quark_server_proto::server::v1::ServiceRegistry, ServerClientError> {
         let mut req = tonic::Request::new(());
         attach_bearer(&mut req, token);
         let resp = self.inner.get_service_registry(req).await?;
@@ -63,8 +63,8 @@ impl ControlPlaneClient {
         version_id: &str,
         workflow_id: &str,
         input: &[u8],
-    ) -> Result<quark_server_proto::controlplane::v1::Deployment, ServerClientError> {
-        let mut req = tonic::Request::new(quark_server_proto::controlplane::v1::DeployRequest {
+    ) -> Result<quark_server_proto::server::v1::Deployment, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::DeployRequest {
             version_id: version_id.to_string(),
             workflow_id: workflow_id.to_string(),
             input: input.to_vec(),
@@ -80,8 +80,8 @@ impl ControlPlaneClient {
         &mut self,
         token: &str,
         deployment_id: &str,
-    ) -> Result<quark_server_proto::controlplane::v1::Deployment, ServerClientError> {
-        let mut req = tonic::Request::new(quark_server_proto::controlplane::v1::RollbackRequest {
+    ) -> Result<quark_server_proto::server::v1::Deployment, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::RollbackRequest {
             deployment_id: deployment_id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -94,8 +94,8 @@ impl ControlPlaneClient {
         &mut self,
         token: &str,
         id: &str,
-    ) -> Result<quark_server_proto::controlplane::v1::Deployment, ServerClientError> {
-        let mut req = tonic::Request::new(quark_server_proto::controlplane::v1::GetDeploymentRequest {
+    ) -> Result<quark_server_proto::server::v1::Deployment, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::GetDeploymentRequest {
             id: id.to_string(),
         });
         attach_bearer(&mut req, token);
@@ -112,8 +112,8 @@ impl ControlPlaneClient {
         token: &str,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<quark_server_proto::controlplane::v1::ListDeploymentsResponse, ServerClientError> {
-        let mut req = tonic::Request::new(quark_server_proto::controlplane::v1::ListDeploymentsRequest {
+    ) -> Result<quark_server_proto::server::v1::ListDeploymentsResponse, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ListDeploymentsRequest {
             query: page_query(limit, offset),
         });
         attach_bearer(&mut req, token);
@@ -133,8 +133,8 @@ impl ControlPlaneClient {
         org_name: &str,
         org_slug: &str,
         artifact_name: &str,
-    ) -> Result<quark_server_proto::controlplane::v1::Tenant, ServerClientError> {
-        let mut req = tonic::Request::new(quark_server_proto::controlplane::v1::ProvisionTenantRequest {
+    ) -> Result<quark_server_proto::server::v1::Tenant, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ProvisionTenantRequest {
             org_name: org_name.to_string(),
             org_slug: org_slug.to_string(),
             artifact_name: artifact_name.to_string(),
@@ -156,8 +156,8 @@ impl ControlPlaneClient {
         token: &str,
         limit: Option<u32>,
         offset: Option<u32>,
-    ) -> Result<quark_server_proto::controlplane::v1::ListTenantsResponse, ServerClientError> {
-        let mut req = tonic::Request::new(quark_server_proto::controlplane::v1::ListTenantsRequest {
+    ) -> Result<quark_server_proto::server::v1::ListTenantsResponse, ServerClientError> {
+        let mut req = tonic::Request::new(quark_server_proto::server::v1::ListTenantsRequest {
             query: page_query(limit, offset),
         });
         attach_bearer(&mut req, token);
@@ -170,7 +170,7 @@ impl ControlPlaneClient {
     pub async fn get_system_health(
         &mut self,
         token: &str,
-    ) -> Result<quark_server_proto::controlplane::v1::SystemHealth, ServerClientError> {
+    ) -> Result<quark_server_proto::server::v1::SystemHealth, ServerClientError> {
         let mut req = tonic::Request::new(());
         attach_bearer(&mut req, token);
         let resp = self.inner.get_system_health(req).await?;

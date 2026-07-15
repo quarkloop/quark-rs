@@ -78,7 +78,7 @@ let client = QuarkClient::builder()
 
 // Access each service client
 let login = client.auth()?.auth().login("user", "api-key").await?;
-let registry = client.server()?.control_plane().get_service_registry(token).await?;
+let registry = client.server()?.server().get_service_registry(token).await?;
 let health = client.node()?.node().health("", "v1").await?;
 ```
 
@@ -109,8 +109,8 @@ let client = ServerClient::builder()
     .build()
     .await?;
 
-let registry = client.control_plane().get_service_registry(token).await?;
-let health = client.control_plane().get_system_health(token).await?;
+let registry = client.server().get_service_registry(token).await?;
+let health = client.server().get_system_health(token).await?;
 ```
 
 **Node:**

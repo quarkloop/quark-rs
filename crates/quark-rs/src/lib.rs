@@ -22,7 +22,7 @@
 //!
 //! // Access each service client (returns Result; unwrap since endpoints are configured).
 //! let login = client.auth()?.auth().login("user", "key").await?;
-//! let registry = client.server()?.control_plane().get_service_registry("token").await?;
+//! let registry = client.server()?.server().get_service_registry("token").await?;
 //! let health = client.node()?.node().health("", "v1").await?;
 //! # Ok(())
 //! # }
@@ -42,7 +42,7 @@ pub mod auth {
     pub use quark_auth_rs::*;
 }
 
-/// Server (control-plane) service client SDK.
+/// Server (server) service client SDK.
 pub mod server {
     pub use quark_server_rs::*;
 }
@@ -213,7 +213,7 @@ impl QuarkClientBuilder {
         self
     }
 
-    /// Set the server (control-plane) endpoint URL.
+    /// Set the server (server) endpoint URL.
     pub fn server_endpoint(mut self, url: impl Into<String>) -> Self {
         self.server_endpoint = Some(url.into());
         self
