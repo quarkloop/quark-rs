@@ -1,0 +1,20 @@
+[package]
+name = "quark-auth-rs"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Ergonomic gRPC client SDK for the auth service (builder pattern)"
+
+[lib]
+name = "quark_auth_rs"
+path = "src/lib.rs"
+
+[dependencies]
+quark-auth-proto = { workspace = true }
+tonic = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }

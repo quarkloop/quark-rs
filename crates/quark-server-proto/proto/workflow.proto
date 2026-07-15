@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package platform.workflow.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "common/identities.proto";
+import "common/paging.proto";
+
+// ===========================================================================
+// WorkflowService — metadata + lifecycle proxy for workflows.
+// Delegates execution to the external workflow engine.
+// ===========================================================================
+
+service WorkflowService {
+  // Metadata CRUD (no engine calls).
+  rpc CreateWorkflow(CreateWorkflowRequest) returns (Workflow);
+  rpc GetWorkflow(GetWorkflowRequest) returns (Workflow);
+  rpc ListWorkflows(ListWorkflowsRequest) returns (ListWorkflowsResponse);
+  rpc UpdateWorkflow(UpdateWorkflowRequest) returns (Workflow);
+  rpc DeleteWorkflow(DeleteWorkflowRequest) returns (google.protobuf.Empty);
+
+  // Run lifecycle (proxied to the external engine).
+  rpc StartRun(StartRunRequest) returns (Run);
+  rpc GetRun(GetRunRequest) returns (Run);
+  rpc CancelRun(CancelRunRequest) returns (Run);
+  rpc ListRuns(ListRunsRequest) returns (ListRunsResponse);
+}
+
+message Workflow {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  platform.common.v1.LifecycleState lifecycle = 4;
+  platform.common.v1.Timestamps timestamps = 5;
+}
+
+message CreateWorkflowRequest {
+  string name = 1;
+  optional string description = 2;
+}
+
+message GetWorkflowRequest {
+  string id = 1;
+}
+
+message ListWorkflowsRequest {
+  platform.common.v1.PageQuery query = 1;
+}
+
+message ListWorkflowsResponse {
+  repeated Workflow workflows = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message UpdateWorkflowRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+}
+
+message DeleteWorkflowRequest {
+  string id = 1;
+}
+
+message Run {
+  string id = 1;                // platform-assigned UUID
+  string workflow_id = 2;
+  string engine_run_id = 3;     // ID from the external engine
+  RunStatus status = 4;
+  google.protobuf.Timestamp started_at = 5;
+  google.protobuf.Timestamp completed_at = 6;
+  optional string error = 7;
+}
+
+enum RunStatus {
+  RUN_STATUS_UNSPECIFIED = 0;
+  RUN_STATUS_PENDING = 1;
+  RUN_STATUS_RUNNING = 2;
+  RUN_STATUS_COMPLETED = 3;
+  RUN_STATUS_FAILED = 4;
+  RUN_STATUS_CANCELED = 5;
+}
+
+message StartRunRequest {
+  string workflow_id = 1;
+  bytes input = 2;  // opaque payload passed to the engine
+}
+
+message GetRunRequest {
+  string id = 1;
+}
+
+message CancelRunRequest {
+  string id = 1;
+}
+
+message ListRunsRequest {
+  platform.common.v1.PageQuery query = 1;
+  string workflow_id = 2;  // optional filter
+}
+
+message ListRunsResponse {
+  repeated Run runs = 1;
+  platform.common.v1.PageMeta meta = 2;
+}

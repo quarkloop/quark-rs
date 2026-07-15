@@ -1,0 +1,17 @@
+[package]
+name = "quark-workflow-rs"
+description = "Type-safe Rust client SDK for the workflow service (builder pattern)"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+quark-workflow-proto = { path = "../quark-workflow-proto" }
+tonic = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }

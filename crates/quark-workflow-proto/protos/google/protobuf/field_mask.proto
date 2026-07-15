@@ -1,0 +1,239 @@
+// Protocol Buffers - Google's data interchange format
+// Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+syntax = "proto3";
+
+package google.protobuf;
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/protobuf/types/known/fieldmaskpb";
+option java_package = "com.google.protobuf";
+option java_outer_classname = "FieldMaskProto";
+option java_multiple_files = true;
+option objc_class_prefix = "GPB";
+
+// `FieldMask` represents a set of symbolic field paths, for example:
+//
+//     paths: "f.a"
+//     paths: "f.b.d"
+//
+// Here `f` represents a field in some root message, `a` and `b` fields
+// in the message found in `f`, and `d` a field found in the message in
+// `f.b`.
+//
+// Field masks are used to specify a subset of fields that should be
+// returned by a get operation or modified by an update operation.
+// Field masks also have a custom JSON encoding (see below).
+//
+// # Field Masks in Projections
+//
+// When used in the context of a projection, a response message or
+// sub-message is filtered by the API to only contain those fields as
+// specified in the mask. For example, if the mask in the previous
+// example is applied to a response message as follows:
+//
+//     f {
+//       a : 22
+//       b {
+//         d : 1
+//         x : 2
+//       }
+//       y : 13
+//     }
+//     z: 8
+//
+// The result will not contain specific values for fields x, y and z
+// (their value will be set to the default, and omitted in the response
+// message).
+//
+//     f {
+//       a : 22
+//       b {
+//         d : 1
+//       }
+//     }
+//
+// A field mask is not always required for get operations. For example,
+// if the target message is accessed by the `GetFoo` client library method
+// and the default field mask is used, the mask will be automatically
+// applied to the response.
+//
+// If the API method doesn't define a default mask, the API will apply a
+// mask based on the proto method definition. For example, a `GetFoo`
+// method defined on a message will generally have a mask of `*` meaning
+// all fields of the response.
+//
+// # Field Masks in Update Operations
+//
+// A field mask in update operations specifies which fields of the
+// targeted resource are going to be updated. The API is required
+// to only change the values of the fields specified in the mask,
+// and leave everything else unchanged. If a proto is being sent to
+// the API, the proto must be in the mask field. If a proto is being
+// sent to the API but the mask is not set, the proto will be sent
+// with all its fields.
+//
+// For example, given the target message:
+//
+//     f {
+//       a : 10
+//       b : 20
+//     }
+//
+// and an update message:
+//
+//     f {
+//       b : 15
+//     }
+//
+// If the field mask is not set, the API will apply the update to all
+// fields. If the field mask is set to `f.b`, the API will only apply
+// the update to the field `b`.
+//
+// # Field Masks and JSON Encoding
+//
+// The JSON representation of a `FieldMask` value follows the pattern of
+// [FieldMaskProto]{google.protobuf.FieldMask}.
+//
+// For example, the proto:
+//
+//     message User {
+//       string full_name = 1;
+//       string email_address = 2;
+//     }
+//
+// And the field mask:
+//
+//     FieldMask {
+//       paths: "full_name"
+//       paths: "email_address"
+//     }
+//
+// Can be encoded in JSON as:
+//
+//     "mask": "full_name,emailAddress"
+//
+// Note: The oneof field `oneof_field` is treated as a group of fields
+// under the same mask.
+//
+// Note: In JSON, field names are lowercased and snake_case.
+//
+// # Field Masks and Oneofs
+//
+// If a field mask is set for a oneof, all the fields in the oneof are
+// considered to be part of the mask. For example, given the proto:
+//
+//     message SampleMessage {
+//       oneof test_oneof {
+//         string name = 1;
+//         SubMessage sub_message = 2;
+//       }
+//     }
+//
+// And the field mask:
+//
+//     FieldMask {
+//       paths: "name"
+//     }
+//
+// The API will consider only the `name` field of the message as the
+// mask. If the `sub_message` field is set, the API will apply the mask
+// to the `sub_message` field.
+//
+// # Field Mask Validation
+//
+// The API will validate the field mask. If the field mask is invalid,
+// the API will return an `INVALID_ARGUMENT` error.
+//
+// For example, the field mask:
+//
+//     FieldMask {
+//       paths: "foo.bar"
+//     }
+//
+// is invalid if the path `foo.bar` doesn't exist in the proto.
+//
+// # Field Mask Examples
+//
+// The following examples illustrate some common use cases for field masks.
+//
+// ## Example 1: Get a specific field
+//
+//     message User {
+//       string full_name = 1;
+//       string email_address = 2;
+//       string phone_number = 3;
+//     }
+//
+// To get the `email_address` field, the client sends a GET request with
+// the field mask:
+//
+//     GET /v1/users/123?mask=email_address
+//
+// The API returns the `email_address` field:
+//
+//     {
+//       "emailAddress": "alice@example.com"
+//     }
+//
+// ## Example 2: Get multiple fields
+//
+// To get the `full_name` and `email_address` fields, the client sends a
+// GET request with the field mask:
+//
+//     GET /v1/users/123?mask=full_name,email_address
+//
+// The API returns the `full_name` and `email_address` fields:
+//
+//     {
+//       "fullName": "Alice Smith",
+//       "emailAddress": "alice@example.com"
+//     }
+//
+// ## Example 3: Update a field
+//
+// To update the `email_address` field, the client sends a PATCH request
+// with the field mask:
+//
+//     PATCH /v1/users/123?mask=email_address
+//     {
+//       "emailAddress": "bob@example.com"
+//     }
+//
+// The API updates the `email_address` field:
+//
+//     {
+//       "fullName": "Alice Smith",
+//       "emailAddress": "bob@example.com"
+//     }
+message FieldMask {
+  // The set of field mask paths.
+  repeated string paths = 1;
+}

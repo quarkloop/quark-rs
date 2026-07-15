@@ -1,0 +1,10 @@
+[package]
+name = "node-example"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+quark-node-rs = { path = "../../crates/quark-node-rs" }
+tokio = { workspace = true }

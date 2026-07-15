@@ -1,0 +1,18 @@
+[package]
+name = "quark-server-rs"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Ergonomic gRPC client SDK for the server service (builder pattern)"
+
+[lib]
+name = "quark_server_rs"
+path = "src/lib.rs"
+
+[dependencies]
+quark-server-proto = { workspace = true }
+tonic = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package platform.common.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Audit timestamps shared by every resource.
+message Timestamps {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+}
+
+// Lifecycle position of a managed resource.
+enum LifecycleState {
+  LIFECYCLE_STATE_UNSPECIFIED = 0;
+  LIFECYCLE_STATE_DRAFT = 1;
+  LIFECYCLE_STATE_ACTIVE = 2;
+  LIFECYCLE_STATE_INACTIVE = 3;
+  LIFECYCLE_STATE_ARCHIVED = 4;
+}
+
+// The caller's identity, extracted from the verified JWT by each service's
+// auth interceptor. Carried in request extensions, never in message fields.
+message Identity {
+  string subject = 1;
+  repeated string roles = 2;
+  string org_id = 3;
+}

@@ -1,0 +1,10 @@
+[package]
+name = "server-example"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+quark-server-rs = { path = "../../crates/quark-server-rs" }
+tokio = { workspace = true }

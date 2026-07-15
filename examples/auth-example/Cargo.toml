@@ -1,0 +1,10 @@
+[package]
+name = "auth-example"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+quark-auth-rs = { path = "../../crates/quark-auth-rs" }
+tokio = { workspace = true }

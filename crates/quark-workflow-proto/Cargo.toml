@@ -1,0 +1,15 @@
+[package]
+name = "quark-workflow-proto"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Generated tonic/prost gRPC types for the workflow service (Temporal API)"
+
+[dependencies]
+tonic = { workspace = true }
+prost = { workspace = true }
+prost-types = { workspace = true }
+
+[build-dependencies]
+tonic-build = { workspace = true }
+prost-build = "0.13"

@@ -1,0 +1,1340 @@
+syntax = "proto3";
+
+package platform.auth.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "common/identities.proto";
+import "common/paging.proto";
+
+// ===========================================================================
+// AuthService — authentication entry points.
+//
+// RPCs without auth interceptor: Login, Refresh, Logout, VerifyToken, Signup,
+// Token, Verify, MagicLink, Otp, Recover, Resend, GetSettings, GetJwks,
+// GetOpenIdConfiguration, Health, ExternalProviderRedirect,
+// ExternalProviderCallback, PasskeyAuthenticationOptions,
+// PasskeyAuthenticationVerify, SSORedirect, SAMLACS, SAMLMetadata,
+// OAuthServerAuthorize, OAuthServerToken, OAuthServerClientDynamicRegister,
+// OAuthServerUserInfo.
+//
+// RPCs with auth interceptor: Reauthenticate, Logout (requires token),
+// GetUser, UpdateUser, ListIdentities, LinkIdentity, DeleteIdentity,
+// EnrollFactor, ChallengeFactor, VerifyFactor, UnenrollFactor, ListFactors,
+// PasskeyRegistrationOptions, PasskeyRegistrationVerify, ListPasskeys,
+// UpdatePasskey, DeletePasskey, UserListOAuthGrants, UserRevokeOAuthGrant,
+// OAuthServerGetAuthorization, OAuthServerConsent, and all Admin* RPCs.
+// ===========================================================================
+
+service AuthService {
+  // ─── Existing (API key auth) ──────────────────────────────────────────
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Refresh(RefreshRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+
+  // ─── Supabase auth flows ──────────────────────────────────────────────
+  rpc Signup(SignupRequest) returns (SignupResponse);
+  rpc Token(TokenRequest) returns (TokenResponse);
+  rpc Verify(VerifyRequest) returns (VerifyResponse);
+  rpc MagicLink(MagicLinkRequest) returns (google.protobuf.Empty);
+  rpc Otp(OtpRequest) returns (google.protobuf.Empty);
+  rpc Recover(RecoverRequest) returns (google.protobuf.Empty);
+  rpc Resend(ResendRequest) returns (ResendResponse);
+  rpc Reauthenticate(google.protobuf.Empty) returns (ReauthenticateResponse);
+  rpc GetSettings(google.protobuf.Empty) returns (Settings);
+  rpc GetJwks(google.protobuf.Empty) returns (JwkSet);
+  rpc GetOpenIdConfiguration(google.protobuf.Empty) returns (OpenIdConfiguration);
+  rpc Health(google.protobuf.Empty) returns (HealthStatus);
+  rpc ExternalProviderRedirect(ExternalProviderRedirectRequest) returns (RedirectResponse);
+  rpc ExternalProviderCallback(ExternalProviderCallbackRequest) returns (TokenResponse);
+  rpc Invite(InviteRequest) returns (User);
+}
+
+// ===========================================================================
+// UserService — user CRUD + role assignment.
+// ===========================================================================
+
+service UserService {
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  rpc UpdateUser(UpdateUserRequest) returns (User);
+  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
+  rpc AssignRole(AssignRoleRequest) returns (User);
+  rpc RevokeRole(RevokeRoleRequest) returns (User);
+}
+
+// ===========================================================================
+// IdentityService — OAuth identity management (requires auth).
+// ===========================================================================
+
+service IdentityService {
+  rpc ListIdentities(ListIdentitiesRequest) returns (ListIdentitiesResponse);
+  rpc LinkIdentity(LinkIdentityRequest) returns (RedirectResponse);
+  rpc DeleteIdentity(DeleteIdentityRequest) returns (google.protobuf.Empty);
+}
+
+// ===========================================================================
+// MFAService — multi-factor authentication (requires auth, not anonymous).
+// ===========================================================================
+
+service MFAService {
+  rpc EnrollFactor(EnrollFactorRequest) returns (EnrollFactorResponse);
+  rpc ChallengeFactor(ChallengeFactorRequest) returns (ChallengeFactorResponse);
+  rpc VerifyFactor(VerifyFactorRequest) returns (Factor);
+  rpc UnenrollFactor(UnenrollFactorRequest) returns (Factor);
+  rpc ListFactors(ListFactorsRequest) returns (ListFactorsResponse);
+}
+
+// ===========================================================================
+// PasskeyService — WebAuthn passkey authentication + management.
+// ===========================================================================
+
+service PasskeyService {
+  // No auth required (login flow)
+  rpc PasskeyAuthenticationOptions(PasskeyAuthOptionsRequest) returns (PasskeyAuthOptionsResponse);
+  rpc PasskeyAuthenticationVerify(PasskeyAuthVerifyRequest) returns (TokenResponse);
+
+  // Requires auth
+  rpc PasskeyRegistrationOptions(PasskeyOptionsRequest) returns (PasskeyRegOptionsResponse);
+  rpc PasskeyRegistrationVerify(PasskeyRegistrationVerifyRequest) returns (Passkey);
+  rpc ListPasskeys(ListPasskeysRequest) returns (ListPasskeysResponse);
+  rpc UpdatePasskey(UpdatePasskeyRequest) returns (Passkey);
+  rpc DeletePasskey(DeletePasskeyRequest) returns (google.protobuf.Empty);
+}
+
+// ===========================================================================
+// SSOService — SAML SSO.
+// ===========================================================================
+
+service SSOService {
+  // No auth required (SSO flow)
+  rpc SSORedirect(SSORedirectRequest) returns (RedirectResponse);
+  rpc SAMLACS(SAMLACSRequest) returns (TokenResponse);
+  rpc SAMLMetadata(google.protobuf.Empty) returns (SAMLMetadataResponse);
+}
+
+// ===========================================================================
+// OAuthServerService — OAuth2/OIDC server (Supabase as provider).
+// ===========================================================================
+
+service OAuthServerService {
+  // Public endpoints
+  rpc OAuthServerAuthorize(OAuthAuthorizeRequest) returns (RedirectResponse);
+  rpc OAuthServerToken(OAuthTokenRequest) returns (TokenResponse);
+  rpc OAuthServerUserInfo(google.protobuf.Empty) returns (UserInfoResponse);
+  rpc OAuthServerClientDynamicRegister(OAuthClientDynamicRegisterRequest) returns (OAuthClient);
+
+  // Requires auth
+  rpc OAuthServerGetAuthorization(OAuthGetAuthorizationRequest) returns (OAuthAuthorization);
+  rpc OAuthServerConsent(OAuthConsentRequest) returns (TokenResponse);
+  rpc UserListOAuthGrants(google.protobuf.Empty) returns (ListOAuthGrantsResponse);
+  rpc UserRevokeOAuthGrant(RevokeOAuthGrantRequest) returns (google.protobuf.Empty);
+}
+
+// ===========================================================================
+// AdminService — admin-only operations (requires admin role).
+// ===========================================================================
+
+service AdminService {
+  // User management
+  rpc AdminListUsers(AdminListUsersRequest) returns (ListUsersResponse);
+  rpc AdminCreateUser(AdminCreateUserRequest) returns (User);
+  rpc AdminGetUser(AdminGetUserRequest) returns (User);
+  rpc AdminUpdateUser(AdminUpdateUserRequest) returns (User);
+  rpc AdminDeleteUser(AdminDeleteUserRequest) returns (google.protobuf.Empty);
+  rpc AdminGenerateLink(AdminGenerateLinkRequest) returns (AdminGenerateLinkResponse);
+
+  // Factor management
+  rpc AdminListUserFactors(AdminListUserFactorsRequest) returns (ListFactorsResponse);
+  rpc AdminDeleteFactor(AdminDeleteFactorRequest) returns (google.protobuf.Empty);
+  rpc AdminUpdateFactor(AdminUpdateFactorRequest) returns (Factor);
+
+  // Passkey management
+  rpc AdminListPasskeys(AdminListPasskeysRequest) returns (ListPasskeysResponse);
+  rpc AdminDeletePasskey(AdminDeletePasskeyRequest) returns (google.protobuf.Empty);
+
+  // Audit log
+  rpc AdminListAuditLogs(AdminListAuditLogsRequest) returns (ListAuditLogsResponse);
+
+  // SSO provider management
+  rpc AdminListSSOProviders(google.protobuf.Empty) returns (ListSSOProvidersResponse);
+  rpc AdminCreateSSOProvider(AdminCreateSSOProviderRequest) returns (SSOProvider);
+  rpc AdminGetSSOProvider(AdminGetSSOProviderRequest) returns (SSOProvider);
+  rpc AdminUpdateSSOProvider(AdminUpdateSSOProviderRequest) returns (SSOProvider);
+  rpc AdminDeleteSSOProvider(AdminDeleteSSOProviderRequest) returns (google.protobuf.Empty);
+
+  // OAuth client management
+  rpc AdminOAuthClientRegister(AdminOAuthClientRegisterRequest) returns (OAuthClient);
+  rpc AdminOAuthClientList(google.protobuf.Empty) returns (ListOAuthClientsResponse);
+  rpc AdminOAuthClientGet(AdminOAuthClientGetRequest) returns (OAuthClient);
+  rpc AdminOAuthClientUpdate(AdminOAuthClientUpdateRequest) returns (OAuthClient);
+  rpc AdminOAuthClientDelete(AdminOAuthClientDeleteRequest) returns (google.protobuf.Empty);
+  rpc AdminOAuthClientRegenerateSecret(AdminOAuthClientRegenerateSecretRequest) returns (OAuthClient);
+
+  // Custom OAuth provider management
+  rpc AdminListCustomOAuthProviders(AdminListCustomOAuthProvidersRequest) returns (ListCustomOAuthProvidersResponse);
+  rpc AdminCreateCustomOAuthProvider(AdminCreateCustomOAuthProviderRequest) returns (CustomOAuthProvider);
+  rpc AdminGetCustomOAuthProvider(AdminGetCustomOAuthProviderRequest) returns (CustomOAuthProvider);
+  rpc AdminUpdateCustomOAuthProvider(AdminUpdateCustomOAuthProviderRequest) returns (CustomOAuthProvider);
+  rpc AdminDeleteCustomOAuthProvider(AdminDeleteCustomOAuthProviderRequest) returns (google.protobuf.Empty);
+}
+
+// ===========================================================================
+// OrganizationService — organizations CRUD + lifecycle.
+// ===========================================================================
+
+service OrganizationService {
+  rpc CreateOrganization(CreateOrganizationRequest) returns (Organization);
+  rpc GetOrganization(GetOrganizationRequest) returns (Organization);
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
+  rpc UpdateOrganization(UpdateOrganizationRequest) returns (Organization);
+  rpc ActivateOrganization(ActivateRequest) returns (Organization);
+  rpc DeactivateOrganization(DeactivateRequest) returns (Organization);
+  rpc ArchiveOrganization(ArchiveRequest) returns (Organization);
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (google.protobuf.Empty);
+}
+
+// ===========================================================================
+// ProjectService — projects CRUD + lifecycle (org-scoped).
+// ===========================================================================
+
+service ProjectService {
+  rpc CreateProject(CreateProjectRequest) returns (Project);
+  rpc GetProject(GetProjectRequest) returns (Project);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc UpdateProject(UpdateProjectRequest) returns (Project);
+  rpc ActivateProject(ActivateProjectRequest) returns (Project);
+  rpc DeactivateProject(DeactivateProjectRequest) returns (Project);
+  rpc ArchiveProject(ArchiveProjectRequest) returns (Project);
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty);
+}
+
+// ===========================================================================
+// WorkspaceService — workspaces CRUD + lifecycle (project-scoped).
+// ===========================================================================
+
+service WorkspaceService {
+  rpc CreateWorkspace(CreateWorkspaceRequest) returns (Workspace);
+  rpc GetWorkspace(GetWorkspaceRequest) returns (Workspace);
+  rpc ListWorkspaces(ListWorkspacesRequest) returns (ListWorkspacesResponse);
+  rpc UpdateWorkspace(UpdateWorkspaceRequest) returns (Workspace);
+  rpc ActivateWorkspace(ActivateWorkspaceRequest) returns (Workspace);
+  rpc DeactivateWorkspace(DeactivateWorkspaceRequest) returns (Workspace);
+  rpc ArchiveWorkspace(ArchiveWorkspaceRequest) returns (Workspace);
+  rpc DeleteWorkspace(DeleteWorkspaceRequest) returns (google.protobuf.Empty);
+}
+
+// ===========================================================================
+// RoleService — roles CRUD + permission grants (org-scoped).
+// ===========================================================================
+
+service RoleService {
+  rpc CreateRole(CreateRoleRequest) returns (Role);
+  rpc GetRole(GetRoleRequest) returns (Role);
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+  rpc UpdateRole(UpdateRoleRequest) returns (Role);
+  rpc DeleteRole(DeleteRoleRequest) returns (google.protobuf.Empty);
+  rpc GrantPermission(GrantPermissionRequest) returns (Role);
+  rpc RevokePermission(RevokePermissionRequest) returns (Role);
+}
+
+// ===========================================================================
+// PolicyService — RBAC policies CRUD (org-scoped).
+// ===========================================================================
+
+service PolicyService {
+  rpc CreatePolicy(CreatePolicyRequest) returns (Policy);
+  rpc GetPolicy(GetPolicyRequest) returns (Policy);
+  rpc ListPolicies(ListPoliciesRequest) returns (ListPoliciesResponse);
+  rpc DeletePolicy(DeletePolicyRequest) returns (google.protobuf.Empty);
+}
+
+// ===========================================================================
+// Core auth messages
+// ===========================================================================
+
+message LoginRequest {
+  string handle = 1;
+  string api_key = 2;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+  string scope = 2;  // "global" (default), "local", "others"
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
+message VerifyTokenRequest {
+  string access_token = 1;
+}
+
+message VerifyTokenResponse {
+  platform.common.v1.Identity identity = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+// ===========================================================================
+// Signup
+// ===========================================================================
+
+message SignupRequest {
+  string email = 1;
+  string phone = 2;
+  string password = 3;
+  map<string, string> data = 4;  // user_metadata
+  string channel = 5;            // "sms" or "whatsapp"
+  string code_challenge = 6;     // PKCE
+  string code_challenge_method = 7;
+}
+
+message SignupResponse {
+  User user = 1;
+  TokenResponse tokens = 2;  // only if autoconfirmed
+}
+
+// ===========================================================================
+// Token (OAuth2 token endpoint — handles all grant types)
+// ===========================================================================
+
+message TokenRequest {
+  string grant_type = 1;    // password, refresh_token, otp, web3, authorization_code
+  string email = 2;
+  string password = 3;
+  string refresh_token = 4;
+  string otp = 5;
+  string phone = 6;
+  string signed_message = 7;   // web3
+  string signature = 8;        // web3
+  string code = 9;             // authorization_code
+  string code_verifier = 10;   // PKCE
+  string client_id = 11;
+  string client_secret = 12;
+}
+
+message TokenResponse {
+  string access_token = 1;
+  string token_type = 2;           // "Bearer"
+  int32 expires_in = 3;            // seconds
+  int64 expires_at = 4;            // unix timestamp
+  string refresh_token = 5;
+  User user = 6;
+  string provider_access_token = 7;
+  string provider_refresh_token = 8;
+  string id_token = 9;             // OIDC ID token
+  WeakPassword weak_password = 10;
+}
+
+message WeakPassword {
+  repeated string reasons = 1;
+  string message = 2;
+}
+
+// ===========================================================================
+// Verify (token verification for signup, recovery, magic link, etc.)
+// ===========================================================================
+
+message VerifyRequest {
+  string type = 1;          // signup, recovery, invite, magiclink, email_change, sms, phone_change, reauthenticate
+  string token = 2;
+  string password = 3;      // for signup verification
+  string phone = 4;
+  string code_verifier = 5; // PKCE
+  string redirect_to = 6;
+}
+
+message VerifyResponse {
+  TokenResponse tokens = 1;
+  User user = 2;
+}
+
+// ===========================================================================
+// Magic link, OTP, Recover, Resend, Reauthenticate
+// ===========================================================================
+
+message MagicLinkRequest {
+  string email = 1;
+  map<string, string> data = 2;  // user_metadata
+  string code_challenge = 3;     // PKCE
+  string code_challenge_method = 4;
+  string gotrue_meta_security = 5;  // captcha token
+}
+
+message OtpRequest {
+  string email = 1;
+  string phone = 2;
+  string channel = 3;  // "sms" or "whatsapp"
+  string type = 4;     // "sms" or "email_change"
+  string data = 5;     // user_metadata (JSON string)
+  string gotrue_meta_security = 6;
+  bool create_user = 7;               // if false, OTP fails for unknown users
+  string code_challenge = 8;          // PKCE
+  string code_challenge_method = 9;   // PKCE method ("s256")
+}
+
+message RecoverRequest {
+  string email = 1;
+  string code_challenge = 2;
+  string code_challenge_method = 3;
+  string gotrue_meta_security = 4;
+}
+
+message ResendRequest {
+  string email = 1;
+  string phone = 2;
+  string type = 3;  // "signup", "sms", "email_change", "phone_change"
+  string gotrue_meta_security = 4;
+  string code_challenge = 5;          // PKCE
+  string code_challenge_method = 6;   // PKCE method ("s256")
+}
+
+message ResendResponse {
+  string message_id = 1;
+}
+
+message ReauthenticateResponse {
+  // no body — just sends an email
+}
+
+// ===========================================================================
+// Settings, JWKS, OpenID configuration, Health
+// ===========================================================================
+
+message Settings {
+  map<string, bool> external = 1;       // provider name → enabled
+  bool disable_signup = 2;
+  bool autoconfirm = 3;
+  bool mailer_autocomplete = 4;
+  bool phone = 5;
+  string sms_provider = 6;
+  MfaSettings mfa = 7;
+  OAuthServerSettings oauth_server = 8;
+  bool saml_enabled = 9;
+  bool anonymous_users_enabled = 10;
+}
+
+message MfaSettings {
+  bool totp = 1;
+  bool phone = 2;
+  bool webauthn = 3;
+}
+
+message OAuthServerSettings {
+  bool enabled = 1;
+}
+
+message JwkSet {
+  repeated Jwk keys = 1;
+}
+
+message Jwk {
+  string kid = 1;
+  string kty = 2;
+  string alg = 3;
+  string use = 4;
+  string n = 5;   // RSA modulus (base64url)
+  string e = 6;   // RSA exponent (base64url)
+  string crv = 7; // for EC keys
+  string x = 8;   // for EC keys
+  string y = 9;   // for EC keys
+}
+
+message OpenIdConfiguration {
+  string issuer = 1;
+  string authorization_endpoint = 2;
+  string token_endpoint = 3;
+  string userinfo_endpoint = 4;
+  string jwks_uri = 5;
+  repeated string scopes_supported = 6;
+  repeated string response_types_supported = 7;
+  repeated string response_modes_supported = 8;
+  repeated string grant_types_supported = 9;
+  repeated string subject_types_supported = 10;
+  repeated string id_token_signing_alg_values_supported = 11;
+}
+
+message HealthStatus {
+  bool healthy = 1;
+  string version = 2;
+  string name = 3;
+}
+
+// ===========================================================================
+// External OAuth (auth-service as OAuth client)
+// ===========================================================================
+
+message ExternalProviderRedirectRequest {
+  string provider = 1;
+  string scopes = 2;
+  string code_challenge = 3;
+  string code_challenge_method = 4;
+  string redirect_to = 5;
+  string invite_token = 6;
+}
+
+message ExternalProviderCallbackRequest {
+  string code = 1;
+  string state = 2;
+  string provider = 3;
+}
+
+message RedirectResponse {
+  string url = 1;
+}
+
+message InviteRequest {
+  string email = 1;
+  string data = 2;  // user_metadata (JSON string)
+}
+
+// ===========================================================================
+// User (extended with all Supabase fields)
+// ===========================================================================
+
+message User {
+  string id = 1;
+  string organization_id = 2;
+  string handle = 3;
+  string email = 4;
+  string display_name = 5;
+  repeated string roles = 6;
+  platform.common.v1.LifecycleState lifecycle = 7;
+  platform.common.v1.Timestamps timestamps = 8;
+
+  // Supabase fields
+  string aud = 9;
+  string role = 10;
+  string phone = 11;
+  google.protobuf.Timestamp email_confirmed_at = 12;
+  google.protobuf.Timestamp phone_confirmed_at = 13;
+  google.protobuf.Timestamp confirmed_at = 14;
+  google.protobuf.Timestamp invited_at = 15;
+  google.protobuf.Timestamp last_sign_in_at = 16;
+  string app_metadata = 17;  // JSON string
+  string user_metadata = 18;  // JSON string
+  bool is_anonymous = 19;
+  bool is_sso_user = 20;
+  google.protobuf.Timestamp banned_until = 21;
+  google.protobuf.Timestamp deleted_at = 22;
+  repeated Identity identities = 23;
+  repeated Factor factors = 24;
+}
+
+message CreateUserRequest {
+  string organization_id = 1;
+  string handle = 2;
+  string email = 3;
+  string display_name = 4;
+  string api_key = 5;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message ListUsersRequest {
+  platform.common.v1.PageQuery query = 1;
+  string organization_id = 2;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string display_name = 2;
+  optional string email = 3;
+  optional string api_key = 4;
+  optional string phone = 5;
+  optional string password = 6;
+  optional string app_metadata = 7;   // JSON string
+  optional string user_metadata = 8;  // JSON string
+  optional string code_challenge = 9;
+  optional string code_challenge_method = 10;
+}
+
+message DeleteUserRequest {
+  string id = 1;
+}
+
+message AssignRoleRequest {
+  string user_id = 1;
+  string role_id = 2;
+}
+
+message RevokeRoleRequest {
+  string user_id = 1;
+  string role_id = 2;
+}
+
+// ===========================================================================
+// Identity
+// ===========================================================================
+
+message Identity {
+  string id = 1;            // identity_id
+  string provider_id = 2;   // provider's user ID
+  string user_id = 3;
+  string identity_data = 4;  // JSON string
+  string provider = 5;
+  google.protobuf.Timestamp last_sign_in_at = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+  string email = 9;
+}
+
+message ListIdentitiesRequest {
+  // empty — returns identities for the authenticated user
+}
+
+message ListIdentitiesResponse {
+  repeated Identity identities = 1;
+}
+
+message LinkIdentityRequest {
+  string provider = 1;
+  string scopes = 2;
+  string redirect_to = 3;
+  string code_challenge = 4;
+  string code_challenge_method = 5;
+}
+
+message DeleteIdentityRequest {
+  string identity_id = 1;
+}
+
+// ===========================================================================
+// MFA — Factor, Challenge
+// ===========================================================================
+
+message Factor {
+  string id = 1;
+  string user_id = 2;
+  string friendly_name = 3;
+  string factor_type = 4;   // "totp", "phone", "webauthn"
+  string status = 5;        // "unverified", "verified"
+  string phone = 6;
+  string otp_secret = 7;    // TOTP secret (only on enroll)
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message EnrollFactorRequest {
+  string friendly_name = 1;
+  string factor_type = 2;   // "totp", "phone", "webauthn"
+  string issuer = 3;
+  string phone = 4;
+}
+
+message EnrollFactorResponse {
+  string id = 1;
+  string factor_type = 2;
+  string friendly_name = 3;
+  TOTPObject totp = 4;      // only for TOTP
+  string phone = 5;         // only for phone
+}
+
+message TOTPObject {
+  string qr_code = 1;       // SVG QR code
+  string secret = 2;
+  string uri = 3;           // otpauth:// URI
+}
+
+message ChallengeFactorRequest {
+  string factor_id = 1;
+  string channel = 2;       // "sms", "whatsapp"
+}
+
+message ChallengeFactorResponse {
+  string id = 1;            // challenge ID
+  string factor_type = 2;
+  int64 expires_at = 3;
+}
+
+message VerifyFactorRequest {
+  string factor_id = 1;
+  string challenge_id = 2;
+  string code = 3;
+}
+
+message UnenrollFactorRequest {
+  string factor_id = 1;
+}
+
+message ListFactorsRequest {
+  // empty — returns factors for the authenticated user
+}
+
+message ListFactorsResponse {
+  repeated Factor factors = 1;
+}
+
+// ===========================================================================
+// Passkeys (WebAuthn)
+// ===========================================================================
+
+message Passkey {
+  string id = 1;
+  string user_id = 2;
+  string friendly_name = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message PasskeyOptionsRequest {
+  // empty — returns registration options for the authenticated user
+}
+
+message PasskeyRegOptionsResponse {
+  string credential_options = 1;  // JSON string (PublicKeyCredentialCreationOptions)
+}
+
+message PasskeyRegistrationVerifyRequest {
+  string friendly_name = 1;
+  string credential_response = 2;  // JSON string (attestation)
+}
+
+message PasskeyAuthOptionsRequest {
+  string email = 1;  // optional — if set, returns allowed credentials for that user
+}
+
+message PasskeyAuthOptionsResponse {
+  string credential_options = 1;  // JSON string (PublicKeyCredentialRequestOptions)
+}
+
+message PasskeyAuthVerifyRequest {
+  string credential_response = 1;  // JSON string (assertion)
+}
+
+message ListPasskeysRequest {
+  // empty — returns passkeys for the authenticated user
+}
+
+message ListPasskeysResponse {
+  repeated Passkey passkeys = 1;
+}
+
+message UpdatePasskeyRequest {
+  string passkey_id = 1;
+  string friendly_name = 2;
+}
+
+message DeletePasskeyRequest {
+  string passkey_id = 1;
+}
+
+// ===========================================================================
+// SSO / SAML
+// ===========================================================================
+
+message SSORedirectRequest {
+  string provider_id = 1;   // optional — if set, skip domain detection
+  string domain = 2;        // optional — auto-detect provider by email domain
+  string redirect_to = 3;
+  string code_challenge = 4;
+  string code_challenge_method = 5;
+}
+
+message SAMLACSRequest {
+  string saml_response = 1;  // base64-encoded SAML response
+  string relay_state = 2;
+}
+
+message SAMLMetadataResponse {
+  string metadata_xml = 1;  // SP metadata XML
+}
+
+// ===========================================================================
+// OAuth Server (Supabase as OAuth provider)
+// ===========================================================================
+
+message OAuthAuthorizeRequest {
+  string response_type = 1;   // "code"
+  string client_id = 2;
+  string redirect_uri = 3;
+  string scope = 4;
+  string state = 5;
+  string code_challenge = 6;
+  string code_challenge_method = 7;
+  string nonce = 8;
+}
+
+message OAuthTokenRequest {
+  string grant_type = 1;            // "authorization_code", "refresh_token"
+  string code = 2;
+  string redirect_uri = 3;
+  string client_id = 4;
+  string client_secret = 5;
+  string code_verifier = 6;
+  string refresh_token = 7;
+}
+
+message UserInfoResponse {
+  string sub = 1;
+  string email = 2;
+  bool email_verified = 3;
+  string phone_number = 4;
+  bool phone_number_verified = 5;
+  string name = 6;
+  string picture = 7;
+  string preferred_username = 8;
+}
+
+message OAuthClientDynamicRegisterRequest {
+  repeated string redirect_uris = 1;
+  string client_name = 2;
+  repeated string scopes = 3;
+  string token_endpoint_auth_method = 4;
+}
+
+message OAuthGetAuthorizationRequest {
+  string authorization_id = 1;
+}
+
+message OAuthAuthorization {
+  string id = 1;
+  string client_id = 2;
+  string scope = 3;
+  string state = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message OAuthConsentRequest {
+  string authorization_id = 1;
+  bool consent = 2;
+}
+
+message ListOAuthGrantsRequest {
+  // empty
+}
+
+message ListOAuthGrantsResponse {
+  repeated OAuthGrant grants = 1;
+}
+
+message OAuthGrant {
+  string id = 1;
+  string client_id = 2;
+  string scope = 3;
+  google.protobuf.Timestamp created_at = 4;
+}
+
+message RevokeOAuthGrantRequest {
+  string grant_id = 1;
+}
+
+message OAuthClient {
+  string id = 1;
+  string secret = 2;  // only returned on create/regenerate
+  string name = 3;
+  repeated string redirect_uris = 4;
+  repeated string scopes = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// ===========================================================================
+// Admin messages
+// ===========================================================================
+
+message AdminListUsersRequest {
+  platform.common.v1.PageQuery query = 1;
+  string sort_by = 2;
+  string filter = 3;        // free-text filter (email/phone substring)
+}
+
+message AdminCreateUserRequest {
+  string email = 1;
+  string phone = 2;
+  string password = 3;
+  string role = 4;
+  string data = 5;          // user_metadata (JSON string)
+  string app_metadata = 6;  // JSON string
+  bool email_confirm = 7;
+  bool phone_confirm = 8;
+  string ban_duration = 9;  // "24h", "none" to unban
+}
+
+message AdminGetUserRequest {
+  string user_id = 1;
+}
+
+message AdminUpdateUserRequest {
+  string user_id = 1;
+  optional string email = 2;
+  optional string phone = 3;
+  optional string password = 4;
+  optional string role = 5;
+  optional string data = 6;          // user_metadata (JSON string)
+  optional string app_metadata = 7;  // JSON string
+  optional bool email_confirm = 8;
+  optional bool phone_confirm = 9;
+  optional string ban_duration = 10;
+}
+
+message AdminDeleteUserRequest {
+  string user_id = 1;
+  bool should_soft_delete = 2;  // soft-delete (set deleted_at) vs hard-delete (remove row)
+}
+
+message AdminGenerateLinkRequest {
+  string type = 1;    // signup, magiclink, recovery, invite, email_change_current, email_change_new
+  string email = 2;
+  string password = 3;
+  string data = 4;    // user_metadata (JSON string)
+  string redirect_to = 5;
+}
+
+message AdminGenerateLinkResponse {
+  string action_link = 1;
+  string email_otp = 2;
+  string hashed_token = 3;
+  string verification_type = 4;
+  string redirect_to = 5;
+  User user = 6;
+}
+
+message AdminListUserFactorsRequest {
+  string user_id = 1;
+}
+
+message AdminDeleteFactorRequest {
+  string user_id = 1;
+  string factor_id = 2;
+}
+
+message AdminUpdateFactorRequest {
+  string user_id = 1;
+  string factor_id = 2;
+  bool force_verified = 3;
+  string friendly_name = 4;
+}
+
+message AdminListPasskeysRequest {
+  string user_id = 1;
+}
+
+message AdminDeletePasskeyRequest {
+  string user_id = 1;
+  string passkey_id = 2;
+}
+
+message AdminListAuditLogsRequest {
+  platform.common.v1.PageQuery query = 1;
+}
+
+message ListAuditLogsResponse {
+  repeated AuditLogEntry entries = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message AuditLogEntry {
+  string id = 1;
+  string actor_id = 2;
+  string action = 3;
+  string payload = 4;  // JSON string
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// ===========================================================================
+// Admin SSO provider management
+// ===========================================================================
+
+message ListSSOProvidersResponse {
+  repeated SSOProvider providers = 1;
+}
+
+message AdminCreateSSOProviderRequest {
+  string name = 1;
+  string sso_provider_type = 2;  // "saml"
+  string metadata_url = 3;
+  string metadata_xml = 4;
+  string attribute_mapping = 5;  // JSON string
+  repeated string domains = 6;
+}
+
+message AdminGetSSOProviderRequest {
+  string idp_id = 1;
+}
+
+message AdminUpdateSSOProviderRequest {
+  string idp_id = 1;
+  optional string name = 2;
+  optional string metadata_url = 3;
+  optional string metadata_xml = 4;
+  optional string attribute_mapping = 5;
+  repeated string domains = 6;
+}
+
+message AdminDeleteSSOProviderRequest {
+  string idp_id = 1;
+}
+
+message SSOProvider {
+  string id = 1;
+  string name = 2;
+  bool enabled = 3;
+  string sso_provider_type = 4;
+  string metadata_url = 5;
+  string metadata_xml = 6;
+  string attribute_mapping = 7;  // JSON string
+  repeated string domains = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
+}
+
+// ===========================================================================
+// Admin OAuth client management
+// ===========================================================================
+
+message AdminOAuthClientRegisterRequest {
+  string name = 1;
+  repeated string redirect_uris = 2;
+  repeated string scopes = 3;
+}
+
+message ListOAuthClientsResponse {
+  repeated OAuthClient clients = 1;
+}
+
+message AdminOAuthClientGetRequest {
+  string client_id = 1;
+}
+
+message AdminOAuthClientUpdateRequest {
+  string client_id = 1;
+  optional string name = 2;
+  repeated string redirect_uris = 3;
+  repeated string scopes = 4;
+}
+
+message AdminOAuthClientDeleteRequest {
+  string client_id = 1;
+}
+
+message AdminOAuthClientRegenerateSecretRequest {
+  string client_id = 1;
+}
+
+// ===========================================================================
+// Admin Custom OAuth provider management
+// ===========================================================================
+
+message AdminListCustomOAuthProvidersRequest {
+  string provider_type = 1;  // "oauth2" or "oidc"
+}
+
+message ListCustomOAuthProvidersResponse {
+  repeated CustomOAuthProvider providers = 1;
+}
+
+message AdminCreateCustomOAuthProviderRequest {
+  string identifier = 1;
+  string provider_type = 2;  // "oauth2" or "oidc"
+  string client_id = 3;
+  string client_secret = 4;
+  string redirect_uri = 5;
+  string issuer = 6;        // for OIDC
+  string scopes = 7;
+  bool enabled = 8;
+}
+
+message AdminGetCustomOAuthProviderRequest {
+  string identifier = 1;
+}
+
+message AdminUpdateCustomOAuthProviderRequest {
+  string identifier = 1;
+  optional string client_id = 2;
+  optional string client_secret = 3;
+  optional string redirect_uri = 4;
+  optional string issuer = 5;
+  optional string scopes = 6;
+  optional bool enabled = 7;
+}
+
+message AdminDeleteCustomOAuthProviderRequest {
+  string identifier = 1;
+}
+
+message CustomOAuthProvider {
+  string identifier = 1;
+  string provider_type = 2;  // "oauth2" or "oidc"
+  string client_id = 3;
+  string redirect_uri = 4;
+  string issuer = 5;        // for OIDC
+  string scopes = 6;
+  bool enabled = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+// ===========================================================================
+// Organization / Project / Workspace / Role / Policy messages (existing)
+// ===========================================================================
+
+message Organization {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  optional string description = 4;
+  platform.common.v1.LifecycleState lifecycle = 5;
+  platform.common.v1.Timestamps timestamps = 6;
+}
+
+message CreateOrganizationRequest {
+  string name = 1;
+  string slug = 2;
+  optional string description = 3;
+}
+
+message GetOrganizationRequest {
+  string id = 1;
+}
+
+message ListOrganizationsRequest {
+  platform.common.v1.PageQuery query = 1;
+}
+
+message ListOrganizationsResponse {
+  repeated Organization organizations = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message UpdateOrganizationRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+}
+
+message ActivateRequest {
+  string id = 1;
+}
+
+message DeactivateRequest {
+  string id = 1;
+}
+
+message ArchiveRequest {
+  string id = 1;
+}
+
+message DeleteOrganizationRequest {
+  string id = 1;
+}
+
+message Project {
+  string id = 1;
+  string organization_id = 2;
+  string name = 3;
+  string slug = 4;
+  optional string description = 5;
+  platform.common.v1.LifecycleState lifecycle = 6;
+  platform.common.v1.Timestamps timestamps = 7;
+}
+
+message CreateProjectRequest {
+  string organization_id = 1;
+  string name = 2;
+  string slug = 3;
+  optional string description = 4;
+}
+
+message GetProjectRequest {
+  string id = 1;
+}
+
+message ListProjectsRequest {
+  platform.common.v1.PageQuery query = 1;
+  string organization_id = 2;
+}
+
+message ListProjectsResponse {
+  repeated Project projects = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message UpdateProjectRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+}
+
+message ActivateProjectRequest {
+  string id = 1;
+}
+
+message DeactivateProjectRequest {
+  string id = 1;
+}
+
+message ArchiveProjectRequest {
+  string id = 1;
+}
+
+message DeleteProjectRequest {
+  string id = 1;
+}
+
+message Workspace {
+  string id = 1;
+  string project_id = 2;
+  string name = 3;
+  optional string description = 4;
+  platform.common.v1.LifecycleState lifecycle = 5;
+  platform.common.v1.Timestamps timestamps = 6;
+}
+
+message CreateWorkspaceRequest {
+  string project_id = 1;
+  string name = 2;
+  optional string description = 3;
+}
+
+message GetWorkspaceRequest {
+  string id = 1;
+}
+
+message ListWorkspacesRequest {
+  platform.common.v1.PageQuery query = 1;
+  string project_id = 2;
+}
+
+message ListWorkspacesResponse {
+  repeated Workspace workspaces = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message UpdateWorkspaceRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+}
+
+message ActivateWorkspaceRequest {
+  string id = 1;
+}
+
+message DeactivateWorkspaceRequest {
+  string id = 1;
+}
+
+message ArchiveWorkspaceRequest {
+  string id = 1;
+}
+
+message DeleteWorkspaceRequest {
+  string id = 1;
+}
+
+message Role {
+  string id = 1;
+  string organization_id = 2;
+  string name = 3;
+  optional string description = 4;
+  repeated string permissions = 5;
+  platform.common.v1.Timestamps timestamps = 6;
+}
+
+message CreateRoleRequest {
+  string organization_id = 1;
+  string name = 2;
+  optional string description = 3;
+}
+
+message GetRoleRequest {
+  string id = 1;
+}
+
+message ListRolesRequest {
+  platform.common.v1.PageQuery query = 1;
+  string organization_id = 2;
+}
+
+message ListRolesResponse {
+  repeated Role roles = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message UpdateRoleRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+}
+
+message DeleteRoleRequest {
+  string id = 1;
+}
+
+message GrantPermissionRequest {
+  string role_id = 1;
+  string permission = 2;
+}
+
+message RevokePermissionRequest {
+  string role_id = 1;
+  string permission = 2;
+}
+
+message Policy {
+  string id = 1;
+  string name = 2;
+  PolicyEffect effect = 3;
+  repeated string actions = 4;
+  repeated string resources = 5;
+  repeated Principal principals = 6;
+  optional string description = 7;
+  platform.common.v1.Timestamps timestamps = 8;
+}
+
+enum PolicyEffect {
+  POLICY_EFFECT_UNSPECIFIED = 0;
+  POLICY_EFFECT_ALLOW = 1;
+  POLICY_EFFECT_DENY = 2;
+}
+
+message Principal {
+  oneof principal {
+    google.protobuf.Empty any = 1;
+    string identity = 2;
+    string role = 3;
+  }
+}
+
+message CreatePolicyRequest {
+  string name = 1;
+  string effect = 2;
+  repeated string actions = 3;
+  repeated string resources = 4;
+  repeated Principal principals = 5;
+  optional string description = 6;
+}
+
+message GetPolicyRequest {
+  string id = 1;
+}
+
+message ListPoliciesRequest {
+  platform.common.v1.PageQuery query = 1;
+}
+
+message ListPoliciesResponse {
+  repeated Policy policies = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message DeletePolicyRequest {
+  string id = 1;
+}

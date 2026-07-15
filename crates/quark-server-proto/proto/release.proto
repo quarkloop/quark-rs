@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package platform.release.v1;
+
+import "google/protobuf/empty.proto";
+import "common/identities.proto";
+import "common/paging.proto";
+
+// ===========================================================================
+// ArtifactService — artifact (package) metadata + lifecycle.
+// ===========================================================================
+
+service ArtifactService {
+  rpc PushArtifact(PushArtifactRequest) returns (Artifact);
+  rpc GetArtifact(GetArtifactRequest) returns (Artifact);
+  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse);
+  rpc DeleteArtifact(DeleteArtifactRequest) returns (google.protobuf.Empty);
+}
+
+message Artifact {
+  string id = 1;
+  string name = 2;
+  ArtifactKind kind = 3;
+  optional string description = 4;
+  platform.common.v1.LifecycleState lifecycle = 5;
+  platform.common.v1.Timestamps timestamps = 6;
+}
+
+enum ArtifactKind {
+  ARTIFACT_KIND_UNSPECIFIED = 0;
+  ARTIFACT_KIND_OCI = 1;
+  ARTIFACT_KIND_BINARY = 2;
+  ARTIFACT_KIND_SOURCE = 3;
+}
+
+message PushArtifactRequest {
+  string name = 1;
+  ArtifactKind kind = 2;
+  optional string description = 3;
+}
+
+message GetArtifactRequest {
+  string id = 1;
+}
+
+message ListArtifactsRequest {
+  platform.common.v1.PageQuery query = 1;
+}
+
+message ListArtifactsResponse {
+  repeated Artifact artifacts = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message DeleteArtifactRequest {
+  string id = 1;
+}
+
+// ===========================================================================
+// VersionService — immutable, content-addressed versions of an artifact.
+// ===========================================================================
+
+service VersionService {
+  rpc CreateVersion(CreateVersionRequest) returns (Version);
+  rpc GetVersion(GetVersionRequest) returns (Version);
+  rpc ListVersions(ListVersionsRequest) returns (ListVersionsResponse);
+  rpc PromoteVersion(PromoteVersionRequest) returns (Version);
+  rpc DeprecateVersion(DeprecateVersionRequest) returns (Version);
+}
+
+message Version {
+  string id = 1;
+  string artifact_id = 2;
+  string label = 3;          // e.g. "1.0.0"
+  string content_hash = 4;   // SHA-256 of the blob
+  uint64 blob_size = 5;
+  VersionStatus status = 6;
+  platform.common.v1.Timestamps timestamps = 7;
+}
+
+enum VersionStatus {
+  VERSION_STATUS_UNSPECIFIED = 0;
+  VERSION_STATUS_DRAFT = 1;
+  VERSION_STATUS_PROMOTED = 2;
+  VERSION_STATUS_DEPRECATED = 3;
+}
+
+message CreateVersionRequest {
+  string artifact_id = 1;
+  string label = 2;
+  string content_hash = 3;  // must match the hash of the uploaded blob
+  uint64 blob_size = 4;
+}
+
+message GetVersionRequest {
+  string id = 1;
+}
+
+message ListVersionsRequest {
+  platform.common.v1.PageQuery query = 1;
+  string artifact_id = 2;  // optional filter
+}
+
+message ListVersionsResponse {
+  repeated Version versions = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message PromoteVersionRequest {
+  string id = 1;
+}
+
+message DeprecateVersionRequest {
+  string id = 1;
+}
+
+// ===========================================================================
+// BlobService — content-addressed blob upload/download via streaming.
+// ===========================================================================
+
+service BlobService {
+  // Client-streaming: upload blob chunks. Service hashes incrementally,
+  // stores the blob, returns its reference (SHA-256 hash + size).
+  rpc UploadBlob(stream BlobChunk) returns (BlobRef);
+
+  // Server-streaming: download a blob by its content hash.
+  rpc DownloadBlob(DownloadBlobRequest) returns (stream BlobChunk);
+}
+
+message BlobChunk {
+  bytes data = 1;
+}
+
+message BlobRef {
+  string hash = 1;    // SHA-256 hex
+  uint64 size = 2;
+}
+
+message DownloadBlobRequest {
+  string hash = 1;
+}

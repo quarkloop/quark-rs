@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package temporal.api.sdk.v1;
+
+option go_package = "go.temporal.io/api/sdk/v1;sdk";
+option java_package = "io.temporal.api.sdk.v1";
+option java_multiple_files = true;
+option java_outer_classname = "ServiceProto";
+option ruby_package = "Temporalio::Api::Sdk::V1";
+option csharp_namespace = "Temporalio.Api.Sdk.V1";
+
+import "temporal/api/sdk/v1/worker_config.proto";
+
+// SdkService defines the gRPC service used by SDK workers to communicate
+// with the Temporal server for task polling and completion.
+service SdkService {
+    // PollWorkflowTask long-polls for a workflow task.
+    rpc PollWorkflowTask (PollWorkflowTaskRequest) returns (PollWorkflowTaskResponse);
+
+    // PollActivityTask long-polls for an activity task.
+    rpc PollActivityTask (PollActivityTaskRequest) returns (PollActivityTaskResponse);
+
+    // PollNexusTask long-polls for a nexus task.
+    rpc PollNexusTask (PollNexusTaskRequest) returns (PollNexusTaskResponse);
+
+    // CompleteWorkflowTask completes a workflow task.
+    rpc CompleteWorkflowTask (CompleteWorkflowTaskRequest) returns (CompleteWorkflowTaskResponse);
+
+    // FailWorkflowTask fails a workflow task.
+    rpc FailWorkflowTask (FailWorkflowTaskRequest) returns (FailWorkflowTaskResponse);
+
+    // CompleteActivityTask completes an activity task.
+    rpc CompleteActivityTask (CompleteActivityTaskRequest) returns (CompleteActivityTaskResponse);
+
+    // FailActivityTask fails an activity task.
+    rpc FailActivityTask (FailActivityTaskRequest) returns (FailActivityTaskResponse);
+
+    // CancelActivityTask cancels an activity task.
+    rpc CancelActivityTask (CancelActivityTaskRequest) returns (CancelActivityTaskResponse);
+
+    // CompleteNexusTask completes a nexus task.
+    rpc CompleteNexusTask (CompleteNexusTaskRequest) returns (CompleteNexusTaskResponse);
+
+    // FailNexusTask fails a nexus task.
+    rpc FailNexusTask (FailNexusTaskRequest) returns (FailNexusTaskResponse);
+}
+
+message PollWorkflowTaskRequest {
+    string namespace = 1;
+    string task_queue = 2;
+    string identity = 3;
+    string binary_checksum = 4;
+    WorkerConfig worker_config = 5;
+    int32 max_tasks_per_second = 6;
+    string build_id = 7;
+}
+
+message PollWorkflowTaskResponse {
+    bytes task_token = 1;
+    string workflow_id = 2;
+    string workflow_type = 3;
+    string run_id = 4;
+    int64 started_event_id = 5;
+    bytes history = 6;
+    int64 continuation_start_event_id = 7;
+    int64 scheduled_time = 8;
+    bool sticky_execution_enabled = 9;
+    string build_id = 10;
+    int64 created_time = 11;
+}
+
+message PollActivityTaskRequest {
+    string namespace = 1;
+    string task_queue = 2;
+    string identity = 3;
+    int32 max_tasks_per_second = 4;
+    string build_id = 5;
+}
+
+message PollActivityTaskResponse {
+    bytes task_token = 1;
+    string workflow_id = 2;
+    string workflow_type = 3;
+    string activity_id = 4;
+    string activity_type = 5;
+    bytes input = 6;
+    int64 heartbeat_timeout_ms = 7;
+    int64 scheduled_time = 8;
+    int64 start_time = 9;
+    int32 attempt = 10;
+    int32 max_attempts = 11;
+    bytes retry_policy = 12;
+    bytes heartbeat_details = 13;
+    string build_id = 14;
+    int64 created_time = 15;
+}
+
+message PollNexusTaskRequest {
+    string namespace = 1;
+    string endpoint = 2;
+    string identity = 3;
+    string build_id = 4;
+}
+
+message PollNexusTaskResponse {
+    bytes task_token = 1;
+    string endpoint = 2;
+    string service = 3;
+    string operation = 4;
+    bytes input = 5;
+    int64 scheduled_time = 6;
+    bytes callback = 7;
+    string build_id = 8;
+    int64 created_time = 9;
+}
+
+message CompleteWorkflowTaskRequest {
+    bytes task_token = 1;
+    bytes completed_request = 2;
+    bool force_create_new_workflow_task = 3;
+    bool return_new_workflow_task = 4;
+}
+
+message CompleteWorkflowTaskResponse {
+}
+
+message FailWorkflowTaskRequest {
+    bytes task_token = 1;
+    bytes failure = 2;
+}
+
+message FailWorkflowTaskResponse {
+}
+
+message CompleteActivityTaskRequest {
+    bytes task_token = 1;
+    bytes result = 2;
+    bytes heartbeat_details = 3;
+}
+
+message CompleteActivityTaskResponse {
+}
+
+message FailActivityTaskRequest {
+    bytes task_token = 1;
+    bytes failure = 2;
+    bytes heartbeat_details = 3;
+}
+
+message FailActivityTaskResponse {
+}
+
+message CancelActivityTaskRequest {
+    bytes task_token = 1;
+    bytes heartbeat_details = 2;
+}
+
+message CancelActivityTaskResponse {
+}
+
+message CompleteNexusTaskRequest {
+    bytes task_token = 1;
+    bytes completed_response = 2;
+}
+
+message CompleteNexusTaskResponse {
+}
+
+message FailNexusTaskRequest {
+    bytes task_token = 1;
+    bytes failure = 2;
+}
+
+message FailNexusTaskResponse {
+}

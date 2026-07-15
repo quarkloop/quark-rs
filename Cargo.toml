@@ -1,0 +1,69 @@
+# quark-rs — Unified Rust client SDK for the Quarkloop platform.
+#
+# This workspace contains the proto definitions and ergonomic builder-pattern
+# gRPC client SDKs for all Quarkloop platform services: auth, server, node,
+# and workflow.
+#
+# This is a closed-source repository. No license is granted.
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/quark-auth-proto",
+    "crates/quark-auth-rs",
+    "crates/quark-server-proto",
+    "crates/quark-server-rs",
+    "crates/quark-node-proto",
+    "crates/quark-node-rs",
+    "crates/quark-workflow-proto",
+    "crates/quark-workflow-rs",
+
+    # ─── examples ──────────────────────────────────────────────────────────
+    "examples/auth-example",
+    "examples/server-example",
+    "examples/node-example",
+    "examples/workflow-example",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Quarkloop"]
+
+[workspace.dependencies]
+# --- gRPC ---
+tonic = "0.12"
+prost = "0.13"
+prost-types = "0.13"
+tonic-build = "0.12"
+
+# --- async / runtime ---
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# --- serialization ---
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# --- errors ---
+thiserror = "1"
+anyhow = "1"
+
+# --- identifiers / time ---
+uuid = { version = "1", features = ["v4", "v7", "serde"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+
+# --- observability ---
+tracing = "0.1"
+
+# --- internal proto crates (path-pinned) ---
+quark-auth-proto = { path = "crates/quark-auth-proto" }
+quark-server-proto = { path = "crates/quark-server-proto" }
+quark-node-proto = { path = "crates/quark-node-proto" }
+quark-workflow-proto = { path = "crates/quark-workflow-proto" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

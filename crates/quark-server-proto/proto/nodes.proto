@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package platform.nodes.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "common/identities.proto";
+import "common/paging.proto";
+
+// ===========================================================================
+// NodesService — metadata + lifecycle proxy for nodes.
+// Delegates execution (shared-library bootstrap + run) to the external nodes
+// service.
+// ===========================================================================
+
+service NodesService {
+  // Metadata CRUD.
+  rpc CreateNode(CreateNodeRequest) returns (Node);
+  rpc GetNode(GetNodeRequest) returns (Node);
+  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+  rpc UpdateNode(UpdateNodeRequest) returns (Node);
+  rpc DeleteNode(DeleteNodeRequest) returns (google.protobuf.Empty);
+
+  // Lifecycle (proxied to the external nodes service).
+  rpc BootstrapNode(BootstrapNodeRequest) returns (Node);
+  rpc StartNode(StartNodeRequest) returns (Node);
+  rpc StopNode(StopNodeRequest) returns (Node);
+  rpc GetNodeStatus(GetNodeStatusRequest) returns (NodeStatus);
+}
+
+message Node {
+  string id = 1;                  // platform-assigned UUID
+  string name = 2;
+  string kind = 3;                // node kind (e.g. "compute", "gateway")
+  string library_ref = 4;         // reference to the shared library to run
+  string runner_node_id = 5;      // ID from the external nodes service
+  optional string description = 6;
+  bytes config = 7;               // opaque config for the library
+  NodeState state = 8;
+  platform.common.v1.Timestamps timestamps = 9;
+}
+
+enum NodeState {
+  NODE_STATE_UNSPECIFIED = 0;
+  NODE_STATE_DRAFT = 1;           // metadata created, not yet bootstrapped
+  NODE_STATE_BOOTSTRAPPED = 2;    // library loaded on the runner
+  NODE_STATE_RUNNING = 3;
+  NODE_STATE_STOPPED = 4;
+  NODE_STATE_FAILED = 5;
+}
+
+message CreateNodeRequest {
+  string name = 1;
+  string kind = 2;
+  string library_ref = 3;
+  optional string description = 4;
+  bytes config = 5;
+}
+
+message GetNodeRequest {
+  string id = 1;
+}
+
+message ListNodesRequest {
+  platform.common.v1.PageQuery query = 1;
+}
+
+message ListNodesResponse {
+  repeated Node nodes = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+message UpdateNodeRequest {
+  string id = 1;
+  optional string name = 2;
+  optional string description = 3;
+  optional bytes config = 4;
+}
+
+message DeleteNodeRequest {
+  string id = 1;
+}
+
+message BootstrapNodeRequest {
+  string id = 1;
+}
+
+message StartNodeRequest {
+  string id = 1;
+}
+
+message StopNodeRequest {
+  string id = 1;
+}
+
+message GetNodeStatusRequest {
+  string id = 1;
+}
+
+message NodeStatus {
+  string node_id = 1;
+  NodeState state = 2;
+  optional string detail = 3;     // error message or health detail
+  google.protobuf.Timestamp last_checked_at = 4;
+}

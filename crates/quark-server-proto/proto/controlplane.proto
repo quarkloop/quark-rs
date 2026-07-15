@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package platform.controlplane.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "common/identities.proto";
+import "common/paging.proto";
+
+// ===========================================================================
+// ControlPlaneService — orchestration, service registry, admin API.
+//
+// This is NOT a gateway. Client CRUD traffic never flows through here.
+// The control-plane handles only:
+//   1. Cross-service orchestration (deploy, rollback, provision)
+//   2. Service registry (clients fetch once, cache)
+//   3. Admin/operator RPCs
+// ===========================================================================
+
+service ControlPlaneService {
+  // ─── Service registry ──────────────────────────────────────────────────
+  rpc GetServiceRegistry(google.protobuf.Empty) returns (ServiceRegistry);
+
+  // ─── Orchestration: deployments ────────────────────────────────────────
+  rpc Deploy(DeployRequest) returns (Deployment);
+  rpc Rollback(RollbackRequest) returns (Deployment);
+  rpc GetDeployment(GetDeploymentRequest) returns (Deployment);
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse);
+
+  // ─── Orchestration: provisioning ───────────────────────────────────────
+  rpc ProvisionTenant(ProvisionTenantRequest) returns (Tenant);
+
+  // ─── Admin (requires "admin" role) ─────────────────────────────────────
+  rpc ListTenants(ListTenantsRequest) returns (ListTenantsResponse);
+  rpc GetSystemHealth(google.protobuf.Empty) returns (SystemHealth);
+}
+
+// ─── Service registry ──────────────────────────────────────────────────────
+
+message ServiceRegistry {
+  repeated ServiceEntry services = 1;
+}
+
+message ServiceEntry {
+  string name = 1;          // "auth", "release", "workflow", "nodes", "secrets"
+  string grpc_url = 2;      // e.g. "http://127.0.0.1:5001"
+  string version = 3;
+}
+
+// ─── Deployments ───────────────────────────────────────────────────────────
+
+message Deployment {
+  string id = 1;
+  string version_id = 2;       // the release version being deployed
+  string workflow_id = 3;      // the workflow that runs the deployment
+  string run_id = 4;           // the workflow run ID (from workflow-service)
+  DeploymentStatus status = 5;
+  google.protobuf.Timestamp started_at = 6;
+  google.protobuf.Timestamp completed_at = 7;
+  optional string error = 8;
+}
+
+enum DeploymentStatus {
+  DEPLOYMENT_STATUS_UNSPECIFIED = 0;
+  DEPLOYMENT_STATUS_DEPLOYING = 1;
+  DEPLOYMENT_STATUS_DEPLOYED = 2;
+  DEPLOYMENT_STATUS_FAILED = 3;
+  DEPLOYMENT_STATUS_ROLLED_BACK = 4;
+}
+
+message DeployRequest {
+  string version_id = 1;
+  string workflow_id = 2;
+  bytes input = 3;             // optional input passed to the workflow run
+}
+
+message RollbackRequest {
+  string deployment_id = 1;
+}
+
+message GetDeploymentRequest {
+  string id = 1;
+}
+
+message ListDeploymentsRequest {
+  platform.common.v1.PageQuery query = 1;
+}
+
+message ListDeploymentsResponse {
+  repeated Deployment deployments = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+// ─── Provisioning ──────────────────────────────────────────────────────────
+
+message Tenant {
+  string id = 1;
+  string org_id = 2;           // created in auth-service
+  string artifact_id = 3;      // default artifact created in release-service
+  string secret_id = 4;        // bootstrap secret created in secrets-service
+  platform.common.v1.Timestamps timestamps = 5;
+}
+
+message ProvisionTenantRequest {
+  string org_name = 1;
+  string org_slug = 2;
+  string artifact_name = 3;    // default artifact name
+}
+
+message ListTenantsRequest {
+  platform.common.v1.PageQuery query = 1;
+}
+
+message ListTenantsResponse {
+  repeated Tenant tenants = 1;
+  platform.common.v1.PageMeta meta = 2;
+}
+
+// ─── System health ─────────────────────────────────────────────────────────
+
+message SystemHealth {
+  repeated ServiceHealth services = 1;
+  google.protobuf.Timestamp checked_at = 2;
+}
+
+message ServiceHealth {
+  string name = 1;
+  bool healthy = 2;
+  optional string detail = 3;
+}
