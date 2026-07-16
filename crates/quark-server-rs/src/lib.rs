@@ -58,7 +58,7 @@
 //! | [`ServerClient::projects`]     | [`services::ProjectService`]      | ProjectService       |
 //! | [`ServerClient::workspaces`]   | [`services::WorkspaceService`]    | WorkspaceService     |
 //!
-//! `ServerService` methods (get_service_registry, deploy, rollback, etc.)
+//! `ServerService` methods (deploy, rollback, etc.)
 //! are available directly on `ServerClient` via `Deref<Target=ServerService>`
 //! — no need for a separate `.server()` accessor.
 //!
@@ -197,7 +197,7 @@ impl ServerClient {
     }
 
     // ─── service accessors ───────────────────────────────────────────────────
-    // NOTE: ServerService methods (get_service_registry, deploy, rollback, etc.)
+    // NOTE: ServerService methods (deploy, rollback, etc.)
     // are available directly on ServerClient via Deref<Target=ServerService>.
     // No need for a separate .server() accessor.
 

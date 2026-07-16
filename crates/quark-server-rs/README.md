@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     // Every server RPC requires a bearer token.
-    let registry = client.get_service_registry("admin-token").await?;
+    // Service discovery is automatic via ServiceDiscovery.DiscoverServices
     for svc in &registry.services {
         println!("{} -> {} ({})", svc.name, svc.grpc_url, svc.version);
     }
@@ -139,7 +139,7 @@ the entire service).
 let cp = client;
 
 // Service registry.
-let registry = cp.get_service_registry(token).await?;
+// Service discovery is automatic via ServiceDiscovery.DiscoverServices
 for svc in &registry.services {
     println!("{} -> {} ({})", svc.name, svc.grpc_url, svc.version);
 }
@@ -300,7 +300,7 @@ Available helpers: `is_transport`, `is_status`, `status_code`, `as_status`,
   are essentially free. Hold
   the returned service client for a sequence of calls, or call the accessor
   inline for one-offs.
-- **`google.protobuf.Empty`.** RPCs that take `Empty` (`GetServiceRegistry`,
+- **`google.protobuf.Empty`.** RPCs that take `Empty` (,
   `GetSystemHealth`) need no request argument; the SDK passes `()` and attaches
   the bearer metadata to an empty-body request.
 - **Escape hatch.** `ServerService::inner()` exposes the underlying tonic

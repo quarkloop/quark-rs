@@ -76,7 +76,7 @@ let client = QuarkClient::builder()
 // Access each service client. Auth and Server use Deref to their primary
 // service, so you can call their methods directly.
 let login = client.auth()?.login("user", "api-key").await?;
-// Service discovery is automatic — no need to call get_service_registry
+// Service discovery is automatic
 let health = client.node()?.node().health("", "v1").await?;
 ```
 
@@ -107,7 +107,7 @@ let client = ServerClient::builder()
     .build()
     .await?;
 
-// Service discovery is automatic — no need to call get_service_registry
+// Service discovery is automatic
 let health = client.get_system_health(token).await?;
 
 // Organization/Project/Workspace are served by the server
