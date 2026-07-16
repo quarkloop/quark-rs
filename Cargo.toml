@@ -41,7 +41,7 @@ license = "MIT"
 tonic = "0.12"
 prost = "0.13"
 prost-types = "0.13"
-tonic-build = "0.12"
+tonic-build = "0.14"
 
 # --- async / runtime ---
 tokio = { version = "1", features = ["full"] }
