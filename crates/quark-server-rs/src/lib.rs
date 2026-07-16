@@ -29,10 +29,10 @@
 //!     .build()
 //!     .await?;
 //!
-//! // Fetch the service registry (every RPC requires a bearer token).
-//! let registry = client.get_service_registry("admin-token").await?;
-//! for svc in &registry.services {
-//!     println!("{} -> {} ({})", svc.name, svc.grpc_url, svc.version);
+//! // Get system health (every RPC requires a bearer token).
+//! let health = client.get_system_health("admin-token").await?;
+//! for svc in &health.services {
+//!     println!("{}: healthy={}", svc.name, svc.healthy);
 //! }
 //!
 //! // Provision a new tenant.

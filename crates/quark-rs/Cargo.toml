@@ -13,6 +13,7 @@ path = "src/lib.rs"
 [dependencies]
 quark-auth-rs = { path = "../quark-auth-rs" }
 quark-server-rs = { path = "../quark-server-rs" }
+quark-server-proto = { path = "../quark-server-proto" }
 quark-node-rs = { path = "../quark-node-rs" }
 quark-workflow-rs = { path = "../quark-workflow-rs" }
 tonic = { workspace = true }

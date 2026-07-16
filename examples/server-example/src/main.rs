@@ -1,4 +1,4 @@
-//! Example: query the server's service registry and system health.
+//! Example: query the server's system health.
 //!
 //! Run: cargo run -p server-example -- http://127.0.0.1:3000
 
@@ -18,13 +18,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Connected to server at {endpoint}");
 
     let token = std::env::var("AUTH_TOKEN").unwrap_or_else(|_| "test-token".to_string());
-
-    // Get service registry
-    let registry = client.get_service_registry(&token).await?;
-    println!("Service registry:");
-    for service in &registry.services {
-        println!("  - {} at {}", service.name, service.grpc_url);
-    }
 
     // Get system health
     let health = client.get_system_health(&token).await?;

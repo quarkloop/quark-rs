@@ -68,10 +68,7 @@ use quark_rs::QuarkClient;
 use std::time::Duration;
 
 let client = QuarkClient::builder()
-    .auth_endpoint("http://127.0.0.1:5001")
     .server_endpoint("http://127.0.0.1:3000")
-    .node_endpoint("http://127.0.0.1:50051")
-    .workflow_endpoint("http://127.0.0.1:7233")
     .connect_timeout(Duration::from_secs(5))
     .build()
     .await?;
@@ -79,7 +76,7 @@ let client = QuarkClient::builder()
 // Access each service client. Auth and Server use Deref to their primary
 // service, so you can call their methods directly.
 let login = client.auth()?.login("user", "api-key").await?;
-let registry = client.server()?.get_service_registry(token).await?;
+// Service discovery is automatic — no need to call get_service_registry
 let health = client.node()?.node().health("", "v1").await?;
 ```
 
@@ -110,7 +107,7 @@ let client = ServerClient::builder()
     .build()
     .await?;
 
-let registry = client.get_service_registry(token).await?;
+// Service discovery is automatic — no need to call get_service_registry
 let health = client.get_system_health(token).await?;
 
 // Organization/Project/Workspace are served by the server

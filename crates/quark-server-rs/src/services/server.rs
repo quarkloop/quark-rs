@@ -1,10 +1,14 @@
-//! ServerService — orchestration, service registry, admin API.
+//! ServerService — orchestration and admin API.
 //!
 //! Wraps `quark_server_proto::server::v1::server_service_client::ServerServiceClient`.
 //!
-//! Covers all 8 RPCs of `ServerService`:
-//! `GetServiceRegistry`, `Deploy`, `Rollback`, `GetDeployment`,
-//! `ListDeployments`, `ProvisionTenant`, `ListTenants`, `GetSystemHealth`.
+//! Covers all 7 RPCs of `ServerService`:
+//! `Deploy`, `Rollback`, `GetDeployment`, `ListDeployments`,
+//! `ProvisionTenant`, `ListTenants`, `GetSystemHealth`.
+//!
+//! Service discovery (registration, heartbeat, discovery) is handled by
+//! the separate `ServiceDiscovery` service — use `ServiceDiscoveryClient`
+//! directly for that.
 //!
 //! The server installs a single [`AuthInterceptor`] on the entire
 //! service (see `server/src/main.rs`), so **every RPC requires a valid bearer
@@ -37,20 +41,6 @@ impl ServerService {
     /// Borrow the underlying tonic client (escape hatch for advanced use).
     pub fn inner(&mut self) -> &mut ServerServiceClient<Channel> {
         &mut self.inner
-    }
-
-    // ─── Service registry ────────────────────────────────────────────────────
-
-    /// `GetServiceRegistry` — fetch the cached service registry. Clients fetch
-    /// once and cache locally; this is *not* a per-request discovery call.
-    pub async fn get_service_registry(
-        &mut self,
-        token: &str,
-    ) -> Result<quark_server_proto::server::v1::ServiceRegistry, ServerClientError> {
-        let mut req = tonic::Request::new(());
-        attach_bearer(&mut req, token);
-        let resp = self.inner.get_service_registry(req).await?;
-        Ok(resp.into_inner())
     }
 
     // ─── Orchestration: deployments ──────────────────────────────────────────

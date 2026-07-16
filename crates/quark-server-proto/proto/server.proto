@@ -8,19 +8,18 @@ import "common/identities.proto";
 import "common/paging.proto";
 
 // ===========================================================================
-// ServerService — orchestration, service registry, admin API.
+// ServerService — orchestration and admin API.
 //
 // This is NOT a gateway. Client CRUD traffic never flows through here.
 // The server handles only:
 //   1. Cross-service orchestration (deploy, rollback, provision)
-//   2. Service registry (clients fetch once, cache)
-//   3. Admin/operator RPCs
+//   2. Admin/operator RPCs
+//
+// Service discovery is handled by the separate ServiceDiscovery service
+// below — services self-register, clients discover via DiscoverServices.
 // ===========================================================================
 
 service ServerService {
-  // ─── Service registry ──────────────────────────────────────────────────
-  rpc GetServiceRegistry(google.protobuf.Empty) returns (ServiceRegistry);
-
   // ─── Orchestration: deployments ────────────────────────────────────────
   rpc Deploy(DeployRequest) returns (Deployment);
   rpc Rollback(RollbackRequest) returns (Deployment);
@@ -35,6 +34,33 @@ service ServerService {
   rpc GetSystemHealth(google.protobuf.Empty) returns (SystemHealth);
 }
 
+// ===========================================================================
+// ServiceDiscovery — service registration, discovery, and health.
+//
+// Lifecycle:
+//   1. Service startup → RegisterService(name, grpc_url, version, ...)
+//   2. Service runs → Heartbeat every TTL seconds (renews lease)
+//   3. Service shutdown → DeregisterService(instance_id)
+//   4. Client SDK → DiscoverServices() to get all healthy instances
+//
+// If a service stops heartbeating, the server marks it UNHEALTHY after
+// 2 × TTL and removes it after 3 consecutive failed health checks.
+// ===========================================================================
+
+service ServiceDiscovery {
+  // Called by each service on startup to register itself.
+  rpc RegisterService(RegisterServiceRequest) returns (RegisterServiceResponse);
+
+  // Called by each service on graceful shutdown.
+  rpc DeregisterService(DeregisterServiceRequest) returns (google.protobuf.Empty);
+
+  // Called by each service periodically to renew its lease.
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  // Called by client SDKs to discover all healthy service instances.
+  rpc DiscoverServices(DiscoverServicesRequest) returns (ServiceRegistry);
+}
+
 // ─── Service registry ──────────────────────────────────────────────────────
 
 message ServiceRegistry {
@@ -42,9 +68,62 @@ message ServiceRegistry {
 }
 
 message ServiceEntry {
-  string name = 1;          // "auth", "release", "workflow", "nodes", "secrets"
-  string grpc_url = 2;      // e.g. "http://127.0.0.1:5001"
-  string version = 3;
+  string name = 1;              // "auth", "release", "workflow", "nodes", "secrets"
+  string instance_id = 2;      // unique per process (UUID generated at startup)
+  string grpc_url = 3;         // e.g. "http://127.0.0.1:5001"
+  string version = 4;          // semver from CARGO_PKG_VERSION
+  ServiceStatus status = 5;    // current health status
+  optional string region = 6;  // for multi-region deployments
+  optional string zone = 7;    // for zone-aware routing
+  google.protobuf.Timestamp registered_at = 8;
+  google.protobuf.Timestamp last_heartbeat_at = 9;
+  repeated string capabilities = 10; // e.g. ["saml", "webauthn", "totp"]
+}
+
+enum ServiceStatus {
+  SERVICE_STATUS_UNSPECIFIED = 0;
+  SERVICE_STATUS_HEALTHY = 1;
+  SERVICE_STATUS_DEGRADED = 2;
+  SERVICE_STATUS_UNHEALTHY = 3;
+  SERVICE_STATUS_DRAINING = 4;
+}
+
+// ─── Service registration ──────────────────────────────────────────────────
+
+message RegisterServiceRequest {
+  string name = 1;              // "auth", "node", "workflow", "box", "server"
+  string instance_id = 2;      // unique per process (UUID generated at startup)
+  string grpc_url = 3;
+  string version = 4;
+  optional string region = 5;
+  optional string zone = 6;
+  repeated string capabilities = 7;
+}
+
+message RegisterServiceResponse {
+  string instance_id = 1;      // echoed back for confirmation
+  uint32 lease_ttl_seconds = 2; // how long until heartbeat must be renewed
+}
+
+message DeregisterServiceRequest {
+  string instance_id = 1;
+}
+
+message HeartbeatRequest {
+  string instance_id = 1;
+  ServiceStatus status = 2;    // HEALTHY, DEGRADED, DRAINING
+}
+
+message HeartbeatResponse {
+  bool acknowledged = 1;
+  uint32 lease_ttl_seconds = 2;
+}
+
+message DiscoverServicesRequest {
+  // If non-empty, only return services matching one of these names.
+  repeated string names = 1;
+  // If true, only return HEALTHY instances.
+  bool healthy_only = 2;
 }
 
 // ─── Deployments ───────────────────────────────────────────────────────────
@@ -175,7 +254,7 @@ service WorkspaceService {
   rpc DeleteWorkspace(DeleteWorkspaceRequest) returns (google.protobuf.Empty);
 }
 
-// Organization / Project / Workspace / Role / Policy messages (existing)
+// Organization / Project / Workspace messages
 // ===========================================================================
 
 message Organization {
