@@ -1,9 +1,9 @@
-# quark-auth-rs
+# quark (internal: quark-auth-rs)
 
 Ergonomic, Supabase-style builder-pattern gRPC client SDK for the
 **auth-service**.
 
-`quark-auth-rs` is the primary client SDK for talking to the auth-service over
+`quark (internal: quark-auth-rs)` is the primary client SDK for talking to the auth-service over
 gRPC. It wraps the generated tonic clients (`quark_auth_proto::auth::v1`) with
 typed convenience methods covering **all 10 services** and **all 91 RPCs**
 defined in [`proto/auth.proto`](../../auth/proto/auth.proto).
@@ -38,13 +38,13 @@ but have been migrated to the server component (`platform.server.v1`). Use
 ```toml
 # Cargo.toml
 [dependencies]
-quark-auth-rs = { path = "../path/to/quark-rs/crates/quark-auth-rs" }
+quark (internal: quark-auth-rs) = { path = "../path/to/quark-rs/crates/quark (internal: quark-auth-rs)" }
 tokio = { version = "1", features = ["full"] }
 ```
 
 ```rust,no_run
 use std::time::Duration;
-use quark_auth_rs::AuthClient;
+use quark::auth::AuthClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -80,7 +80,7 @@ consume-and-return-self API. Finalize with either:
 
 ```rust,no_run
 use std::time::Duration;
-use quark_auth_rs::AuthClient;
+use quark::auth::AuthClient;
 
 # async fn t() -> Result<(), Box<dyn std::error::Error>> {
 let eager = AuthClient::builder()
@@ -129,7 +129,7 @@ recovery, resend, reauthenticate, settings, JWKS, OIDC discovery, health,
 external OAuth redirect/callback, invite. **19 RPCs.**
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient) -> Result<(), Box<dyn std::error::Error>> {
 // API-key login (no bearer).
 let login = client.login("alice", "api-key").await?;
@@ -174,7 +174,7 @@ let invited = client.invite(&login.access_token, "carol@example.com", "{}").awai
 User CRUD + role assignment. **7 RPCs.** Every RPC requires a bearer token.
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 let user = client.users()
     .create(token, "org-1", "alice", "alice@example.com", "Alice", Some("api-key"))
@@ -201,7 +201,7 @@ OAuth identity management for the authenticated user. **3 RPCs.** All require a
 bearer token.
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 let identities = client.identities().list(token).await?;
 
@@ -218,7 +218,7 @@ client.identities().delete(token, "identity-id").await?;
 TOTP / phone / WebAuthn factors. **5 RPCs.** All require a bearer token.
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 let enrolled = client.mfa()
     .enroll(token, "My TOTP", "totp", "auth-service", "")
@@ -244,7 +244,7 @@ WebAuthn passkey authentication + management. **7 RPCs.**
   `update`, `delete`.
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 // Login flow (anonymous).
 let opts = client.passkeys().authentication_options("alice@example.com").await?;
@@ -266,7 +266,7 @@ client.passkeys().delete(token, &passkey.id).await?;
 SAML SSO entry points. **3 RPCs.** All anonymous (part of the browser SSO flow).
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient) -> Result<(), Box<dyn std::error::Error>> {
 let redirect = client.sso()
     .redirect("", "example.com", "https://app.example.com/cb", "", "")
@@ -286,7 +286,7 @@ auth-service acting as an OAuth2/OIDC provider. **8 RPCs.**
 - Authenticated: `get_authorization`, `consent`, `list_grants`, `revoke_grant`.
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 // Public OAuth2 endpoints.
 let redirect = client.oauth_server()
@@ -317,7 +317,7 @@ provider management, OAuth client management, and custom OAuth provider
 management.
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient, admin_token: &str) -> Result<(), Box<dyn std::error::Error>> {
 // Users.
 let users = client.admin().list_users(admin_token, 50, 0, "created_at", "").await?;
@@ -372,7 +372,7 @@ client.admin().delete_custom_oauth_provider(admin_token, "google").await?;
 Roles + permission grants (org-scoped). **7 RPCs.** All require a bearer token.
 
 ```rust,no_run
-# use quark_auth_rs::AuthClient;
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 let role = client.roles()
     .create(token, "org-1", "editor", Some("Can edit content"))
@@ -391,8 +391,8 @@ client.roles().delete(token, &role.id).await?;
 RBAC policies. **4 RPCs.** All require a bearer token.
 
 ```rust,no_run
-use quark_auth_rs::proto::{Principal, principal::Principal as PrincipalKind};
-# use quark_auth_rs::AuthClient;
+use quark::auth::proto::{Principal, principal::Principal as PrincipalKind};
+# use quark::auth::AuthClient;
 # async fn t(client: &AuthClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 let principals = vec![Principal { principal: Some(PrincipalKind::Identity("user-123".into())) }];
 let policy = client.policies()
@@ -442,7 +442,7 @@ variants:
 ergonomic. Helper methods make status introspection concise:
 
 ```rust,no_run
-use quark_auth_rs::{AuthClient, AuthClientError};
+use quark::auth::{AuthClient, AuthClientError};
 # async fn t(client: &AuthClient, token: &str) -> Result<(), AuthClientError> {
 match client.users().get(token, "missing-id").await {
     Ok(u) => println!("user: {u:?}"),

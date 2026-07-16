@@ -1,9 +1,9 @@
-# quark-server-rs
+# quark (internal: quark-server-rs)
 
 Ergonomic, Supabase-style builder-pattern gRPC client SDK for the
 **server**.
 
-`quark-server-rs` is the primary client SDK for talking to the server over
+`quark (internal: quark-server-rs)` is the primary client SDK for talking to the server over
 gRPC. It wraps the generated tonic clients (`quark_server_proto::server::v1`)
 with typed convenience methods covering **all 32 RPCs** across the four
 services defined in [`proto/server.proto`](../../server/proto/server.proto):
@@ -37,13 +37,13 @@ have been migrated to the server itself.
 ```toml
 # Cargo.toml
 [dependencies]
-quark-server-rs = { path = "../path/to/quark-rs/crates/quark-server-rs" }
+quark (internal: quark-server-rs) = { path = "../path/to/quark-rs/crates/quark (internal: quark-server-rs)" }
 tokio = { version = "1", features = ["full"] }
 ```
 
 ```rust,no_run
 use std::time::Duration;
-use quark_server_rs::ServerClient;
+use quark::server::ServerClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -84,7 +84,7 @@ consume-and-return-self API. Finalize with either:
 
 ```rust,no_run
 use std::time::Duration;
-use quark_server_rs::ServerClient;
+use quark::server::ServerClient;
 
 # async fn t() -> Result<(), Box<dyn std::error::Error>> {
 let eager = ServerClient::builder()
@@ -134,7 +134,7 @@ RPC requires a bearer token (the server's `AuthInterceptor` is installed on
 the entire service).
 
 ```rust,no_run
-# use quark_server_rs::ServerClient;
+# use quark::server::ServerClient;
 # async fn t(client: &ServerClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 let cp = client;
 
@@ -178,7 +178,7 @@ Organization CRUD + lifecycle. **8 RPCs.** All require a bearer token. Served
 directly by the server (not delegated to auth-service).
 
 ```rust,no_run
-# use quark_server_rs::ServerClient;
+# use quark::server::ServerClient;
 # async fn t(client: &ServerClient, token: &str) -> Result<(), Box<dyn std::error::Error>> {
 let orgs = client.organizations();
 
@@ -198,7 +198,7 @@ orgs.delete(token, &org.id).await?;
 Project CRUD + lifecycle, org-scoped. **8 RPCs.** All require a bearer token.
 
 ```rust,no_run
-# use quark_server_rs::ServerClient;
+# use quark::server::ServerClient;
 # async fn t(client: &ServerClient, token: &str, org_id: &str) -> Result<(), Box<dyn std::error::Error>> {
 let projects = client.projects();
 
@@ -219,7 +219,7 @@ Workspace CRUD + lifecycle, project-scoped. **8 RPCs.** All require a bearer
 token.
 
 ```rust,no_run
-# use quark_server_rs::ServerClient;
+# use quark::server::ServerClient;
 # async fn t(client: &ServerClient, token: &str, project_id: &str) -> Result<(), Box<dyn std::error::Error>> {
 let workspaces = client.workspaces();
 
@@ -268,7 +268,7 @@ three variants:
 ergonomic. Helper methods make status introspection concise:
 
 ```rust,no_run
-use quark_server_rs::{ServerClient, ServerClientError};
+use quark::server::{ServerClient, ServerClientError};
 # async fn t(client: &ServerClient, token: &str) -> Result<(), ServerClientError> {
 match client.get_deployment(token, "missing-id").await {
     Ok(d) => println!("deployment: {d:?}"),

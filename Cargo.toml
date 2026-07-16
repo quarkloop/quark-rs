@@ -1,4 +1,4 @@
-# quark-rs — Unified Rust client SDK for the Quark platform.
+# quark — Unified Rust client SDK for the Quark platform.
 #
 # This workspace contains the proto definitions and ergonomic builder-pattern
 # gRPC client SDKs for all Quark platform services: auth, server, node,
@@ -19,7 +19,7 @@ members = [
     "crates/quark-workflow-rs",
 
     # ─── unified facade ────────────────────────────────────────────────────
-    "crates/quark-rs",
+    "crates/quark",
 
     # ─── examples ──────────────────────────────────────────────────────────
     "examples/auth-example",

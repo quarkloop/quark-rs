@@ -1,4 +1,4 @@
-# quark-workflow-rs
+# quark (internal: quark-workflow-rs)
 
 A type-safe Rust client SDK for the [workflow-rs](https://github.com/quarkloop/workflow.rs) server.
 
@@ -18,14 +18,14 @@ A type-safe Rust client SDK for the [workflow-rs](https://github.com/quarkloop/w
 
 ```toml
 [dependencies]
-quark-workflow-rs = { path = "../path/to/quark-rs/crates/quark-workflow-rs" }
+quark (internal: quark-workflow-rs) = { path = "../path/to/quark-rs/crates/quark (internal: quark-workflow-rs)" }
 ```
 
 ## Quick Start
 
 ```rust
 use serde::{Deserialize, Serialize};
-use quark_workflow_rs::{Workflow, WorkflowClient};
+use quark::workflow::{Workflow, WorkflowClient};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct OrderResult { order_id: String, status: String }
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## Signals and Queries
 
 ```rust
-use quark_workflow_rs::{signal, query};
+use quark::workflow::{signal, query};
 
 let increment = signal::<i64>("increment");
 let get_value = query::<i64, ()>("getValue");
@@ -76,7 +76,7 @@ let value: i64 = handle.query(get_value, ()).await?;
 ## Namespace Operations
 
 ```rust
-use quark_workflow_rs::{RegisterNamespaceRequest, WorkflowClient};
+use quark::workflow::{RegisterNamespaceRequest, WorkflowClient};
 use std::time::Duration;
 
 let client = WorkflowClient::builder()

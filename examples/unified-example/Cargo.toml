@@ -7,5 +7,5 @@ license.workspace = true
 publish = false
 
 [dependencies]
-quark-rs = { path = "../../crates/quark-rs" }
+quark = { path = "../../crates/quark" }
 tokio = { workspace = true }

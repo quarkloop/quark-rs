@@ -1,4 +1,4 @@
-# AGENTS.md — Operating Contract for AI Agents Working on quark-rs
+# AGENTS.md — Operating Contract for AI Agents Working on quark
 
 This file is the authoritative source of truth for any AI agent (or human
 contributor) that opens this repository with the intent to modify code. Read it
@@ -14,7 +14,7 @@ branches skipped, no "close enough" approximations.
 
 ## 2. What This Repository Is
 
-quark-rs is the **unified Rust client SDK** for the Quark platform. It
+quark is the **unified Rust client SDK** for the Quark platform. It
 provides ergonomic, builder-pattern gRPC client crates for four services:
 
 | Service | Proto crate | Client crate | Services | RPCs |
@@ -24,7 +24,7 @@ provides ergonomic, builder-pattern gRPC client crates for four services:
 | node | `quark-node-proto` | `quark-node-rs` | 1 | 7 |
 | workflow | `quark-workflow-proto` | `quark-workflow-rs` | 3 | ~96 |
 
-The unified facade crate `quark-rs` wraps all four sub-clients behind a single
+The unified facade crate `quark` wraps all four sub-clients behind a single
 `QuarkClient` with a `QuarkClientBuilder`.
 
 **Service ownership after the org/project/workspace migration:**
@@ -41,7 +41,7 @@ The unified facade crate `quark-rs` wraps all four sub-clients behind a single
 ## 3. Workspace Layout
 
 ```
-quark-rs/
+quark/
 ├── crates/
 │   ├── quark-auth-proto/         proto files + tonic/prost codegen for auth
 │   ├── quark-auth-rs/            builder-pattern gRPC client for auth
@@ -51,7 +51,7 @@ quark-rs/
 │   ├── quark-node-rs/            builder-pattern gRPC client for node
 │   ├── quark-workflow-proto/     Temporal API protos + codegen for workflow
 │   ├── quark-workflow-rs/        builder-pattern gRPC client for workflow
-│   └── quark-rs/                 unified facade (QuarkClient + QuarkClientBuilder)
+│   └── quark/                 unified facade (QuarkClient + QuarkClientBuilder)
 ├── examples/
 │   ├── auth-example/             demonstrate auth client
 │   ├── server-example/           demonstrate server client
@@ -69,7 +69,7 @@ quark-rs/
 |---|---|
 | `quark-{service}-proto` | Proto definitions + tonic/prost codegen (no client logic) |
 | `quark-{service}-rs` | Ergonomic builder-pattern gRPC client SDK |
-| `quark-rs` | Unified facade wrapping all sub-clients |
+| `quark` | Unified facade wrapping all sub-clients |
 
 ## 5. Design Principles
 
@@ -140,6 +140,6 @@ All commit messages must follow this format:
 - `{type}` is one of: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `build`, `ci`.
 - `{message}` is a concise, imperative-mood description.
 - No period at the end.
-- Example: `feat: add unified quark-rs facade crate`
+- Example: `feat: add unified quark facade crate`
 - Example: `fix: rename proto-gen crates to avoid lockfile collisions`
 - Example: `docs: add agents.md with commit message format`

@@ -5,7 +5,7 @@
 //!
 //! Run: cargo run -p unified-example
 
-use quark_rs::QuarkClient;
+use quark::QuarkClient;
 use std::time::Duration;
 
 #[tokio::main]

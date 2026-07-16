@@ -1,5 +1,5 @@
 #![allow(clippy::result_large_err)]
-//! # quark-rs — Unified Rust client SDK for the Quark platform.
+//! # quark — Unified Rust client SDK for the Quark platform.
 //!
 //! This crate provides a single entry point ([`QuarkClient`]) that wraps all
 //! platform service clients (auth, server, node, workflow) behind a unified
@@ -19,7 +19,7 @@
 //!
 //! ```no_run
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! use quark_rs::QuarkClient;
+//! use quark::QuarkClient;
 //!
 //! let mut client = QuarkClient::builder()
 //!     .server_endpoint("http://127.0.0.1:3000")
@@ -83,7 +83,6 @@ pub enum QuarkError {
 
 // ─── Unified client ─────────────────────────────────────────────────────
 
-use std::sync::Arc;
 use std::time::Duration;
 use tonic::transport::Channel;
 
@@ -203,7 +202,7 @@ fn find_service_url<'a>(
 ///
 /// ```no_run
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-/// use quark_rs::QuarkClient;
+/// use quark::QuarkClient;
 /// use std::time::Duration;
 ///
 /// let mut client = QuarkClient::builder()
@@ -297,14 +296,8 @@ impl QuarkClientBuilder {
         };
 
         // 3. Create the auth sub-client if discovered.
-        let auth = find_service_url(&services, "auth").map(|url| {
-            let b = auth::AuthClient::builder().endpoint(url);
-            // AuthClient::builder().build() is async — but we can't use
-            // ? inside a map closure. Handle below.
-            (url, b)
-        });
-
-        let auth = if let Some((url, mut b)) = auth {
+        let auth = if let Some(url) = find_service_url(&services, "auth") {
+            let mut b = auth::AuthClient::builder().endpoint(url);
             if let Some(d) = self.connect_timeout {
                 b = b.connect_timeout(d);
             }

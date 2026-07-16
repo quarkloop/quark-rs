@@ -1,9 +1,9 @@
-# quark-node-rs
+# quark (internal: quark-node-rs)
 
 Ergonomic, Supabase-style builder-pattern gRPC client SDK for the
 **`quark-noded`** daemon.
 
-`quark-node-rs` is the primary client SDK. It wraps the generated tonic client
+`quark (internal: quark-node-rs)` is the primary client SDK. It wraps the generated tonic client
 (`quark_node_proto::v1`) with typed convenience methods covering **all 7 RPCs**
 of `NodeService` defined in [`proto/node.proto`](../../quark-rs/crates/quark-node-proto/proto/node.proto).
 
@@ -30,13 +30,13 @@ architectural rationale.
 ```toml
 # Cargo.toml
 [dependencies]
-quark-node-rs = { path = "../path/to/quark-rs/crates/quark-node-rs" }
+quark (internal: quark-node-rs) = { path = "../path/to/quark-rs/crates/quark (internal: quark-node-rs)" }
 tokio = { version = "1", features = ["full"] }
 ```
 
 ```rust,no_run
 use std::time::Duration;
-use quark_node_rs::NodeClient;
+use quark::node::NodeClient;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -90,7 +90,7 @@ consume-and-return-self API. Finalize with either:
 
 ```rust,no_run
 use std::time::Duration;
-use quark_node_rs::NodeClient;
+use quark::node::NodeClient;
 
 # async fn t() -> Result<(), Box<dyn std::error::Error>> {
 let eager = NodeClient::builder()
@@ -137,7 +137,7 @@ proto response.
 The gRPC API for the node execution daemon. **7 RPCs.**
 
 ```rust,no_run
-# use quark_node_rs::NodeClient;
+# use quark::node::NodeClient;
 # async fn t(client: &NodeClient) -> Result<(), Box<dyn std::error::Error>> {
 let node = client.node();
 
@@ -214,7 +214,7 @@ variants:
 ergonomic. Helper methods make status introspection concise:
 
 ```rust,no_run
-use quark_node_rs::{NodeClient, NodeClientError};
+use quark::node::{NodeClient, NodeClientError};
 # async fn t(client: &NodeClient) -> Result<(), NodeClientError> {
 match client.node().health("", "v1").await {
     Ok(h) => println!("status: {}", h.status),

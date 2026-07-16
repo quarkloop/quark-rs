@@ -6,12 +6,12 @@ Licensed under the MIT License.
 
 ## Overview
 
-This workspace contains proto definitions and ergonomic builder-pattern gRPC client SDKs for all Quark platform services: auth, server, node, and workflow. A unified facade crate (`quark-rs`) wraps all sub-clients behind a single `QuarkClient` with a `QuarkClientBuilder`.
+This workspace contains proto definitions and ergonomic builder-pattern gRPC client SDKs for all Quark platform services: auth, server, node, and workflow. A unified facade crate (`quark`) wraps all sub-clients behind a single `QuarkClient` with a `QuarkClientBuilder`.
 
 ## Crate Structure
 
 ```
-quark-rs/
+quark/
 ├── crates/
 │   ├── quark-auth-proto/         Proto files + tonic/prost codegen for auth
 │   ├── quark-auth-rs/            Builder-pattern gRPC client for auth (10 services, 91 RPCs)
@@ -21,7 +21,7 @@ quark-rs/
 │   ├── quark-node-rs/            Builder-pattern gRPC client for node (1 service, 7 RPCs)
 │   ├── quark-workflow-proto/     Proto files + codegen for workflow (Temporal API)
 │   ├── quark-workflow-rs/        Builder-pattern gRPC client for workflow
-│   └── quark-rs/                 Unified facade (QuarkClient + QuarkClientBuilder)
+│   └── quark/                 Unified facade (QuarkClient + QuarkClientBuilder)
 ├── examples/
 │   ├── auth-example/             Auth client demo (login + list users)
 │   ├── server-example/           Server client demo (service registry + health)
@@ -39,7 +39,7 @@ quark-rs/
 |---|---|
 | `quark-{service}-proto` | Proto definitions + tonic/prost codegen (no client logic) |
 | `quark-{service}-rs` | Ergonomic builder-pattern gRPC client SDK |
-| `quark-rs` | Unified facade wrapping all sub-clients |
+| `quark` | Unified facade wrapping all sub-clients |
 
 ## Design Principles
 
@@ -64,7 +64,7 @@ quark-rs/
 ### Unified Client
 
 ```rust
-use quark_rs::QuarkClient;
+use quark::QuarkClient;
 use std::time::Duration;
 
 let client = QuarkClient::builder()
