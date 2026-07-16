@@ -38,7 +38,7 @@ license = "MIT"
 
 [workspace.dependencies]
 # --- gRPC ---
-tonic = "0.12"
+tonic = "0.14"
 prost = "0.13"
 prost-types = "0.13"
 tonic-build = "0.12"
